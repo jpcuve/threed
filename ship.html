@@ -16,6 +16,9 @@
 </head>
 <body>
 <script src="js/three.min.js"></script>
+<script src="js/loaders/DDSLoader.js"></script>
+<script src="js/loaders/MTLLoader.js"></script>
+<script src="js/loaders/OBJMTLLoader.js"></script>
 <script>
     var scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000, 1, 1000);
@@ -33,27 +36,26 @@
     var pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial);
     scene.add(pointsSystem);
 
-    var planeGeometry = new THREE.PlaneGeometry(100, 100);
-    var planeMaterial = new THREE.MeshBasicMaterial({color: 0x33FF33, side: THREE.DoubleSide});
-    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.rotation.x += Math.PI / 4;
-    plane.rotation.y += Math.PI / 4;
-    scene.add(plane);
+    var loader = new THREE.OBJLoader();
+    loader.load('assets/ship.obj', function(ship){
+        scene.add(ship);
+        render();
+    });
 
 
-    camera.position.z = 500;
+
+    camera.position.z = 1000;
     var increment = -1;
 
     function update(){
         // do nothing for now
         camera.position.z += increment;
-        if (camera.position.z > 500){
+        if (camera.position.z > 1000){
             increment = -1;
         }
         if (camera.position.z < 0){
             increment = +1;
         }
-        plane.rotation.z += Math.PI / 90;
     }
 
     var render = function () {
@@ -62,7 +64,6 @@
         update();
     };
 
-    render();
 </script>
 
 
