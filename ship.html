@@ -28,6 +28,10 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+    directionalLight.position.set(0, 1, 0);
+    scene.add(directionalLight);
+
     var pointsGeometry = new THREE.Geometry();
     for (i = 0; i < 1000; i++){
         pointsGeometry.vertices.push(new THREE.Vector3(Math.random() * 500 - 250, Math.random() * 500 - 250, Math.random() * 500 - 250));
@@ -36,13 +40,15 @@
     var pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial);
     scene.add(pointsSystem);
 
-    var loader = new THREE.OBJLoader();
-    loader.load('assets/ship.obj', function(ship){
-        scene.add(ship);
+    var loader = new THREE.OBJMTLLoader();
+    loader.load('assets/rocket.obj', 'assets/rocket.mtl', function(o){
+        o.position.set(0, 0, 0);
+        o.scale.set(100, 100, 100);
+        scene.add(o);
+        ship = o;
         render();
     });
-
-
+    var ship;
 
     camera.position.z = 1000;
     var increment = -1;
@@ -55,6 +61,9 @@
         }
         if (camera.position.z < 0){
             increment = +1;
+        }
+        if (ship){
+            ship.rotation.x += Math.PI / 90;
         }
     }
 
