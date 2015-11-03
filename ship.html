@@ -41,7 +41,7 @@
     scene.add(pointsSystem);
 
     var loader = new THREE.OBJMTLLoader();
-    loader.load('assets/rocket.obj', 'assets/rocket.mtl', function(o){
+    loader.load('assets/models/rocket.obj', 'assets/models/rocket.mtl', function(o){
         o.position.set(0, 0, 0);
         o.scale.set(100, 100, 100);
         scene.add(o);
