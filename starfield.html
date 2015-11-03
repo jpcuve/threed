@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<script>
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000, 1, 1000);
+    var i, CUBE_EDGE = 1000;
+
+    var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+    directionalLight.position.set(0, 1, 0);
+    scene.add(directionalLight);
+
+    var pointsGeometry = new THREE.Geometry();
+    for (i = 0; i < 1000; i++){
+        pointsGeometry.vertices.push(new THREE.Vector3(Math.random() * CUBE_EDGE - CUBE_EDGE / 2, Math.random() * CUBE_EDGE - CUBE_EDGE / 2, Math.random() * CUBE_EDGE - CUBE_EDGE / 2));
+    }
+    var pointsMaterial = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 5});
+    var pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial);
+    scene.add(pointsSystem);
+
+
+
+    var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var keys = [];
+    var deg = Math.PI / 180;
+
+    function update(){
+
+        if (keys.indexOf(38) >= 0){
+//            window.console.log('up');
+            camera.rotation.x += deg;
+        }
+        if (keys.indexOf(40) >= 0){
+//            window.console.log('down');
+            camera.rotation.x -= deg;
+        }
+        if (keys.indexOf(37) >= 0){
+//            window.console.log('left');
+            camera.rotation.y += deg;
+        }
+        if (keys.indexOf(39) >= 0){
+//            window.console.log('right');
+            camera.rotation.y -= deg;
+        }
+    }
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    document.addEventListener('keydown', onKeyDown, false);
+    document.addEventListener('keyup', onKeyUp, false);
+    document.addEventListener('mousemove', onMouseMove, false);
+
+    function onKeyDown(event){
+        if (keys.indexOf(event.keyCode) < 0){
+            keys.push(event.keyCode);
+        }
+/*
+        switch(event.keyCode){
+            case 38: // up
+                    upPressed = true;
+                break;
+            case 40: // down
+                    downPressed = true;
+                break;
+            case 37: // left
+                    leftPressed = true;
+                break;
+            case 39: // right
+                    rightPressed = true;
+                break;
+        }
+*/
+    }
+
+    function onKeyUp(event){
+        var index = keys.indexOf(event.keyCode);
+        if (index >= 0){
+            keys.splice(index, 1);
+        }
+/*
+        switch(event.keyCode){
+            case 38: // up
+                    upPressed = false;
+                break;
+            case 40: // down
+                    downPressed = false;
+                break;
+            case 37: // left
+                    leftPressed = false;
+                break;
+            case 39: // right
+                    rightPressed = false;
+                break;
+        }
+*/
+    }
+
+    function onMouseMove(event){
+        // window.console.debug(event.clientX + " " + event.clientY);
+    }
+
+    var render = function () {
+        requestAnimationFrame(render);
+        renderer.render(scene, camera);
+        update();
+    };
+
+    render();
+
+
+
+</script>
+
+
+
+</body>
+</html>
