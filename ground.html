@@ -16,6 +16,9 @@
 </head>
 <body>
 <script src="js/three.min.js"></script>
+<script src="js/loaders/DDSLoader.js"></script>
+<script src="js/loaders/MTLLoader.js"></script>
+<script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
     var scene = new THREE.Scene();
@@ -23,34 +26,58 @@
     var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
     var orbitControls = new THREE.OrbitControls(camera);
     orbitControls.addEventListener('change', render);
+    var count = 2;
 
     var renderer = new THREE.WebGLRenderer();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
     document.body.appendChild( renderer.domElement );
 
     var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
-    directionalLight.position.set(0, 0, 1);
+    directionalLight.castShadow = true;
+    directionalLight.shadowDarkness = 0.5;
+    directionalLight.shadowCameraNear = 100;
+    directionalLight.shadowCameraFar = 200;
+    directionalLight.shadowCameraLeft = -20; // or whatever value works for the scale of your scene
+    directionalLight.shadowCameraRight = 20;
+    directionalLight.shadowCameraTop = 20;
+    directionalLight.shadowCameraBottom = -20;
+    directionalLight.position.set(0, 0, 20);
     scene.add(directionalLight);
+    scene.add(new THREE.DirectionalLightHelper(directionalLight, 0.2));
+
 
     var geometry = new THREE.PlaneBufferGeometry(100, 100, 100, 100);
     var positionArray = geometry.attributes.position.array, i;
+    // update nodes
     for (i = 0; i < positionArray.length / 3; i++){
         positionArray.set([Math.random()], i * 3 + 2);
 
     }
-    // update nodes
     var texture = new THREE.TextureLoader().load('assets/textures/UV_Grid_Sm.jpg', function () {
         animate();
     });
-    var material = new THREE.MeshPhongMaterial({ map: texture } );
-    var ground = new THREE.Mesh( geometry, material );
-    scene.add( ground );
+    var material = new THREE.MeshLambertMaterial({ map: texture } );
+    var ground = new THREE.Mesh(geometry, material);
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    var ship = new THREE.OBJMTLLoader().load('assets/models/rocket.obj', 'assets/models/rocket.mtl', function(o){
+        o.position.set(0, 0, 5);
+        o.castShadow = true;
+//        o.scale.set(100, 100, 100);
+        scene.add(o);
+        animate();
+    });
 
     camera.position.z = 50;
 
     function animate() {
-        requestAnimationFrame( animate );
-        orbitControls.update();
+        count--;
+        if (count <= 0){
+            requestAnimationFrame( animate );
+            orbitControls.update();
+        }
 
 /*
         ground.rotation.x += 0.1;
