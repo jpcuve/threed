@@ -39,7 +39,7 @@
 
     }
     // update nodes
-    var texture = THREE.ImageUtils.loadTexture('assets/textures/UV_Grid_Sm.jpg', THREE.UVMapping, function () {
+    var texture = new THREE.TextureLoader().load('assets/textures/UV_Grid_Sm.jpg', function () {
         animate();
     });
     var material = new THREE.MeshPhongMaterial({ map: texture } );
