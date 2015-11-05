@@ -33,6 +33,7 @@
     renderer.shadowMap.enabled = true;
     document.body.appendChild( renderer.domElement );
 
+/*
     var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
     directionalLight.castShadow = true;
     directionalLight.shadowDarkness = 1;
@@ -45,7 +46,15 @@
     directionalLight.shadowCameraBottom = -d;
     directionalLight.position.set(0, 0, 20);
     scene.add(directionalLight);
-    scene.add(new THREE.DirectionalLightHelper(directionalLight));
+*/
+    var spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(10, 20, 20);
+    spotLight.castShadow = true;
+    spotLight.shadowCameraNear = 1;
+    spotLight.intensity = 1;
+    scene.add(spotLight);
+
+//    scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
 
     var geometry = new THREE.PlaneBufferGeometry(100, 100, 100, 100);
@@ -65,12 +74,27 @@
 
     var ship = new THREE.OBJMTLLoader().load('assets/models/rocket.obj', 'assets/models/rocket.mtl', function(o){
         o.position.set(0, 0, 5);
-        o.castShadow = true;
-        o.receiveShadow = true;
+        o.traverse( function ( child ) {
+            if ( child instanceof THREE.Mesh ) {
+                child.castShadow = true;
+
+            }
+        } );
+//        o.receiveShadow = true;
 //        o.scale.set(100, 100, 100);
         scene.add(o);
         animate();
     });
+
+    var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+    var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
+    cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    // make the cube cast and recieve shadow
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+    cube.position.set(3, 3, 5);
+    scene.add(cube);
+
 
     camera.position.z = 50;
 
