@@ -33,7 +33,7 @@
     var pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial);
     scene.add(pointsSystem);
 
-    new THREE.TextureLoader().load('assets/textures/snowflake5.png', function(texture){
+    new THREE.TextureLoader().load('assets/textures/UV_Grid_Lrg.jpg', function(texture){
         var spriteMaterial = new THREE.SpriteMaterial({ color: 0xFFFFFF, map: texture });
         var minz = new THREE.Sprite(spriteMaterial);
         minz.position.z = -20;
