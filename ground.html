@@ -25,7 +25,7 @@
     scene.fog = new THREE.Fog(0x000000, 1, 100);
     var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
     var orbitControls = new THREE.OrbitControls(camera);
-    orbitControls.addEventListener('change', render);
+//    orbitControls.addEventListener('change', render);
     var count = 2;
 
     var renderer = new THREE.WebGLRenderer();
@@ -54,7 +54,7 @@
     scene.add(spotLight);
 */
 
-//    scene.add(new THREE.DirectionalLightHelper(directionalLight));
+    scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
 
     var geometry = new THREE.PlaneBufferGeometry(100, 100, 100, 100);
@@ -72,7 +72,8 @@
     ground.receiveShadow = true;
     scene.add(ground);
 
-    var ship = new THREE.OBJMTLLoader().load('assets/models/rocket.obj', 'assets/models/rocket.mtl', function(o){
+    new THREE.OBJMTLLoader().load('assets/models/rocket.obj', 'assets/models/rocket.mtl', function(o){
+        ship = o;
         o.position.set(0, 0, 5);
         o.traverse( function ( child ) {
             if ( child instanceof THREE.Mesh ) {
@@ -86,6 +87,7 @@
         animate();
     });
 
+    var ship;
     var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
     var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
     cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
@@ -102,7 +104,9 @@
         count--;
         if (count <= 0){
             requestAnimationFrame( animate );
+            update();
             orbitControls.update();
+            render();
         }
 
 /*
@@ -110,6 +114,12 @@
         ground.rotation.y += 0.1;
 */
 
+    }
+
+    function update(){
+        if (ship){
+            ship.position.add(new THREE.Vector3(0.01, 0.01, 0))
+        }
     }
 
     function render(){
