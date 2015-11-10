@@ -67,7 +67,7 @@
     var texture = new THREE.TextureLoader().load('assets/textures/UV_Grid_Sm.jpg', function () {
         animate();
     });
-    var material = new THREE.MeshPhongMaterial({ color: "white" });
+    var material = new THREE.MeshPhongMaterial({ color: 0x888800 });
     var ground = new THREE.Mesh(geometry, material);
     ground.receiveShadow = true;
     scene.add(ground);
