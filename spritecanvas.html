@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body id="body">
+<script src="js/three.min.js"></script>
+<script>
+
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    var text = 'Is this working?';
+    var textHeight = 30;
+    context.font = textHeight + 'px Arial';
+    var textWidth = context.measureText(text).width;
+    var edge = Math.max(textHeight, textWidth);
+    console.log("edge:", edge);
+    // 2d duty
+    canvas.width = edge;
+    canvas.height = edge;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#ff0000";
+    context.font = textHeight + 'px Arial'; // canvas resize forces me to redefine the font
+    context.fillText(text, edge / 2, edge / 2);
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(edge, edge);
+    context.stroke();
+
+    var texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+    var material = new THREE.SpriteMaterial({map: texture, useScreenCoordinates: false});
+    var sprite = new THREE.Sprite(material); // sprite size is always 1, centered on (0, 0, 0)
+    var scene = new THREE.Scene();
+    var camera;
+    var renderer = new THREE.WebGLRenderer();
+
+    var h = window.innerHeight, w = window.innerWidth;
+
+
+
+    camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 5000);
+
+    console.log("w: " + w + " | h: " + h);
+    renderer.setSize(w, h);
+
+    document.getElementById('body').appendChild(renderer.domElement);
+
+    scene.add(sprite);
+
+    camera.position.z = 2;
+
+    // render the whole things up
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+
+    animate();
+</script>
+
+
+</body>
+</html>
