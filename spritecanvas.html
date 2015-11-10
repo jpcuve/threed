@@ -16,6 +16,7 @@
 </head>
 <body id="body">
 <script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
 <script>
 
     var canvas = document.createElement('canvas');
@@ -43,7 +44,7 @@
 
     var texture = new THREE.Texture(canvas);
     texture.needsUpdate = true;
-    var material = new THREE.SpriteMaterial({map: texture, useScreenCoordinates: false});
+    var material = new THREE.SpriteMaterial({map: texture});
     var sprite = new THREE.Sprite(material); // sprite size is always 1, centered on (0, 0, 0)
     var scene = new THREE.Scene();
     var camera;
@@ -51,10 +52,8 @@
 
     var h = window.innerHeight, w = window.innerWidth;
 
-
-
     camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 5000);
-
+    var orbitControls = new THREE.OrbitControls(camera);
     console.log("w: " + w + " | h: " + h);
     renderer.setSize(w, h);
 
@@ -67,6 +66,7 @@
     // render the whole things up
     function animate() {
         requestAnimationFrame(animate);
+        orbitControls.update();
         renderer.render(scene, camera);
     }
 
