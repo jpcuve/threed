@@ -26,6 +26,11 @@
     context.font = textHeight + 'px Arial';
     var textWidth = context.measureText(text).width;
     var edge = Math.max(textHeight, textWidth);
+    var i, tot = 1;
+    for (i = 0; i < 20 && tot < edge; i++){
+        tot *= 2;
+    }
+    edge = tot;
     console.log("edge:", edge);
     // 2d duty
     canvas.width = edge;
