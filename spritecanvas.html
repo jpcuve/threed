@@ -14,7 +14,7 @@
         }
     </style>
 </head>
-<body id="body">
+<body>
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
@@ -31,17 +31,18 @@
         tot *= 2;
     }
     edge = tot;
-    console.log("edge:", edge);
+    console.log("edge:", edge);  // texture size must be power of 2
     // 2d duty
     canvas.width = edge;
     canvas.height = edge;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+//    context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "#ff0000";
     context.font = textHeight + 'px Arial'; // canvas resize forces me to redefine the font
     context.fillText(text, edge / 2, edge / 2);
+    context.strokeStyle = "#0000ff";
     context.beginPath();
     context.moveTo(0, 0);
     context.lineTo(edge, edge);
@@ -54,6 +55,7 @@
     var scene = new THREE.Scene();
     var camera;
     var renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor("0x00ffff", 1);
 
     var h = window.innerHeight, w = window.innerWidth;
 
@@ -62,7 +64,7 @@
     console.log("w: " + w + " | h: " + h);
     renderer.setSize(w, h);
 
-    document.getElementById('body').appendChild(renderer.domElement);
+    document.body.appendChild(renderer.domElement);
 
     scene.add(sprite);
 
@@ -72,6 +74,10 @@
     function animate() {
         requestAnimationFrame(animate);
         orbitControls.update();
+/*
+        context.fillText(new Date().getMilliseconds().toString(), edge / 2, edge / 2);
+        texture.needsUpdate = true;
+*/
         renderer.render(scene, camera);
     }
 
