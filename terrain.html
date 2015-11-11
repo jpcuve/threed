@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script>
+    function Terrain(detail) {
+        this.max = Math.pow(2, detail);
+        this.size = this.max + 1;
+        this.map = new THREE.PlaneBufferGeometry(this.max, this.max, this.max, this.max);
+        this.positionArray = this.map.attributes.position.array;
+        console.log("array size:" + this.positionArray.length);
+    }
+
+    Terrain.prototype.offset = function(x, y){
+        return ((y % this.size) * this.size + (x % this.size)) * 3;
+    };
+
+    Terrain.prototype.set = function(x, y, z){
+        this.positionArray[this.offset(x, y) + 2] = z;
+    };
+
+    Terrain.prototype.get = function(x, y){
+        return this.positionArray[this.offset(x, y) + 2];
+    };
+
+    Terrain.prototype.generate = function(roughness){
+        this.set(0, 0, this.max / 2);
+        this.set(this.max, 0, this.max / 2);
+        this.set(this.max, this.max, this.max / 2);
+        this.set(0, this.max, this.max / 2);
+        this.divide(this.max, roughness);
+    };
+
+    Terrain.prototype.diamond = function(x, y, disp, scale){
+        var average = (this.get(x - disp, y - disp) + this.get(x - disp, y + disp - 1) + this.get(x + disp - 1, y - disp) + this.get(x + disp - 1, y + disp - 1) / 4);
+        this.set(x, y, average + Math.random() * scale * 2 - scale);
+    };
+
+    Terrain.prototype.square = function(x, y, disp, scale){
+        var average = (this.get(x - disp, y) + this.get(x, y + disp - 1) + this.get(x + disp - 1, y) + this.get(x, y + disp - 1) / 4);
+        this.set(x, y, average + Math.random() * scale * 2 - scale);
+    };
+
+    Terrain.prototype.divide = function(size, roughness) {
+        var x, y, half = size / 2;
+        var scale = roughness * size;
+        if (half < 1) return;
+        for (y = half; y < this.max; y += size) {
+            for (x = half; x < this.max; x += size) {
+                this.diamond(x, y, half, scale);
+            }
+        }
+        for (y = half; y <= this.max; y += half) {
+            for (x = (y + half) % size; x <= this.max; x += size) {
+                this.square(x, y, half, scale);
+            }
+        }
+        this.divide(size / 2, roughness);
+    };
+
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000, 1, 100);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var orbitControls = new THREE.OrbitControls(camera);
+    orbitControls.addEventListener('change', render);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var directionalLight = new THREE.DirectionalLight(0xff00ff, 1);
+    directionalLight.position.set(0, 0, 20);
+    scene.add(directionalLight);
+
+    scene.add(new THREE.DirectionalLightHelper(directionalLight));
+
+    var terrain = new Terrain(4);
+    terrain.generate(0.1);
+    var terrainMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true });
+    var terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
+    scene.add(terrainMesh);
+
+    camera.position.z = 50;
+
+    function render(){
+        renderer.render(scene, camera);
+    }
+
+    render();
+
+</script>
+
+</body>
+</html>
