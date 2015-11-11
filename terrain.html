@@ -23,14 +23,15 @@
         this.size = this.max + 1;
         this.map = new THREE.PlaneBufferGeometry(this.max, this.max, this.max, this.max);
         this.positionArray = this.map.attributes.position.array;
-        console.log("array size:" + this.positionArray.length);
+//        console.log("array size:" + this.positionArray.length);
     }
 
     Terrain.prototype.offset = function(x, y){
-        return ((y % this.size) * this.size + (x % this.size)) * 3;
+        return (((y + this.size) % this.size) * this.size + ((x + this.size) % this.size)) * 3;
     };
 
     Terrain.prototype.set = function(x, y, z){
+//        console.log('offset:', x, y, "->", this.offset(x, y));
         this.positionArray[this.offset(x, y) + 2] = z;
     };
 
@@ -40,20 +41,25 @@
 
     Terrain.prototype.generate = function(roughness){
         this.set(0, 0, this.max / 2);
-        this.set(this.size, 0, this.max / 2);
-        this.set(this.size, this.size, this.max / 2);
-        this.set(0, this.size, this.max / 2);
+        this.set(this.max, 0, this.max / 2);
+        this.set(this.max, this.max, this.max / 2);
+        this.set(0, this.max, this.max / 2);
         this.divide(this.max, roughness);
     };
 
     Terrain.prototype.diamond = function(x, y, disp, scale){
-        var average = (this.get(x - disp, y - disp) + this.get(x - disp, y + disp) + this.get(x + disp, y - disp) + this.get(x + disp, y + disp) / 4);
+        console.log("diamond: (", x, ",", y, ")");
+        var average = (this.get(x - disp, y - disp) + this.get(x - disp, y + disp) + this.get(x + disp, y - disp) + this.get(x + disp, y + disp)) / 4;
         this.set(x, y, average + Math.random() * scale * 2 - scale);
     };
 
     Terrain.prototype.square = function(x, y, disp, scale){
-        var average = (this.get(x - disp, y) + this.get(x, y + disp) + this.get(x + disp, y) + this.get(x, y + disp) / 4);
-        this.set(x, y, average + Math.random() * scale * 2 - scale);
+        console.log("square: (", x, ",", y, ")");
+        var average = (this.get(x - disp, y) + this.get(x, y + disp) + this.get(x + disp, y) + this.get(x, y + disp)) / 4;
+//        console.log("average: ", x);
+        var z = average + Math.random() * scale * 2 - scale;
+        console.log('new z:', z);
+        this.set(x, y, z);
     };
 
     Terrain.prototype.divide = function(size, roughness) {
@@ -65,8 +71,9 @@
                 this.diamond(x, y, half, scale);
             }
         }
-        for (y = half; y <= this.max; y += half) {
-            for (x = (y + half) % size; x <= this.max; x += size) {
+        for (y = 0; y <= this.max; y += half) {
+            for (x = (y % size == 0 ? half : 0); x <= this.max; x += size) {
+                console.log('x,y: ', x, y);
                 this.square(x, y, half, scale);
             }
         }
@@ -89,8 +96,8 @@
 
     scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
-    var terrain = new Terrain(4);
-    terrain.generate(0.1);
+    var terrain = new Terrain(5);
+    terrain.generate(0.05);
     var terrainMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true });
     var terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
     scene.add(terrainMesh);
