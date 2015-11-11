@@ -40,19 +40,19 @@
 
     Terrain.prototype.generate = function(roughness){
         this.set(0, 0, this.max / 2);
-        this.set(this.max, 0, this.max / 2);
-        this.set(this.max, this.max, this.max / 2);
-        this.set(0, this.max, this.max / 2);
+        this.set(this.size, 0, this.max / 2);
+        this.set(this.size, this.size, this.max / 2);
+        this.set(0, this.size, this.max / 2);
         this.divide(this.max, roughness);
     };
 
     Terrain.prototype.diamond = function(x, y, disp, scale){
-        var average = (this.get(x - disp, y - disp) + this.get(x - disp, y + disp - 1) + this.get(x + disp - 1, y - disp) + this.get(x + disp - 1, y + disp - 1) / 4);
+        var average = (this.get(x - disp, y - disp) + this.get(x - disp, y + disp) + this.get(x + disp, y - disp) + this.get(x + disp, y + disp) / 4);
         this.set(x, y, average + Math.random() * scale * 2 - scale);
     };
 
     Terrain.prototype.square = function(x, y, disp, scale){
-        var average = (this.get(x - disp, y) + this.get(x, y + disp - 1) + this.get(x + disp - 1, y) + this.get(x, y + disp - 1) / 4);
+        var average = (this.get(x - disp, y) + this.get(x, y + disp) + this.get(x + disp, y) + this.get(x, y + disp) / 4);
         this.set(x, y, average + Math.random() * scale * 2 - scale);
     };
 
