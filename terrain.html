@@ -100,9 +100,12 @@
 
     scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
-    var terrain = new Terrain(4);
+    var terrain = new Terrain(5);
     terrain.generate(0.2);
-    var terrainMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true });
+    var texture = THREE.ImageUtils.loadTexture('assets/textures/UV_Grid_Sm.jpg', {}, function(){
+        render();
+    });
+    var terrainMaterial = new THREE.MeshBasicMaterial({ map: texture, wireframe: false });
     var x, y, terrainMesh;
     for (x = 0; x < 3; x++){
         for (y = 0; y < 3; y++){
@@ -118,8 +121,6 @@
     function render(){
         renderer.render(scene, camera);
     }
-
-    render();
 
 </script>
 
