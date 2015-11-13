@@ -199,6 +199,10 @@
         ship = assets['shipModel'].asset;
         ship.position.set(0, 0, 20);
 //        ship.scale.set(10, 10, 10);
+        var roty = new THREE.Matrix4().makeRotationY(Math.PI / 6);
+        var rotz = new THREE.Matrix4().makeRotationZ(Math.PI / 4);
+        var rot = new THREE.Matrix4().multiplyMatrices(roty, rotz);
+        ship.matrix = rot;
         scene.add(ship);
         animate();
     });
@@ -210,10 +214,16 @@
 
     function update(){
         if (keyboard.isPressed(90)){
-            ship.position.x = ship.position.x + 0.1;
+            ship.rotation.y = ship.rotation.y + Math.PI / 90;
         }
         if (keyboard.isPressed(83)){
-            ship.position.x = ship.position.x - 0.1;
+            ship.rotation.y = ship.rotation.y - Math.PI / 90;
+        }
+        if (keyboard.isPressed(81)){
+            ship.rotation.z = ship.rotation.z + Math.PI / 90;
+        }
+        if (keyboard.isPressed(68)){
+            ship.rotation.z = ship.rotation.z - Math.PI / 90;
         }
 
     }
