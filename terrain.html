@@ -175,14 +175,14 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    var directionalLight = new THREE.DirectionalLight(0xff00ff, 1);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(0, 0, 20);
     scene.add(directionalLight);
 
     scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
     var terrain = new Terrain(6);
-    terrain.generate(0.2);
+    terrain.generate(0.1);
     var ship;
     var assetLoader = new AssetLoader(function(assets){
         console.log('assets loaded', assets);
@@ -198,16 +198,17 @@
         }
         ship = assets['shipModel'].asset;
         ship.position.set(0, 0, 20);
-//        ship.scale.set(10, 10, 10);
+/*
         var roty = new THREE.Matrix4().makeRotationY(Math.PI / 6);
         var rotz = new THREE.Matrix4().makeRotationZ(Math.PI / 4);
         var rot = new THREE.Matrix4().multiplyMatrices(roty, rotz);
         ship.matrix = rot;
+*/
         scene.add(ship);
         animate();
     });
     assetLoader.add('terrainTexture', 'texture', 'assets/textures/UV_Grid_Sm.jpg');
-    assetLoader.add('shipModel', 'objmtl', 'assets/models/rocket.obj', 'assets/models/rocket.mtl');
+    assetLoader.add('shipModel', 'objmtl', 'assets/models/ref.obj', 'assets/models/ref.mtl');
     assetLoader.load();
 
     camera.position.z = 50;
