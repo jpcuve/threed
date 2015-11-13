@@ -16,6 +16,9 @@
 </head>
 <body>
 <script src="js/three.min.js"></script>
+<script src="js/loaders/DDSLoader.js"></script>
+<script src="js/loaders/MTLLoader.js"></script>
+<script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
     function Terrain(detail) {
@@ -82,6 +85,56 @@
         this.divide(size / 2, roughness);
     };
 
+    function AssetLoader(callback){
+        this.map = {};
+        this.count = 0;
+        this.callback = callback;
+    }
+
+    AssetLoader.prototype.add = function(id, type, url, url2){
+        this.map[id] = {
+            type: type,
+            url: url,
+            url2: url2
+        };
+    };
+
+    AssetLoader.prototype.dec = function(){
+        this.count--;
+        if (this.count <= 0){
+            this.callback(this.map);
+        }
+    };
+
+    AssetLoader.prototype.load = function(){
+        this.count = 0;
+        var key, val, that = this;
+        for (key in this.map){
+            if (this.map.hasOwnProperty(key)){
+                this.count++;
+                val = this.map[key];
+                switch (val.type){
+                    case 'texture':
+                        (function(val){
+                            new THREE.TextureLoader().load(val.url, function(texture){
+                                val.asset = texture;
+                                that.dec();
+                            });
+                        })(val);
+                        break;
+                    case 'objmtl':
+                        (function(val){
+                            new THREE.OBJMTLLoader().load(val.url, val.url2, function(object){
+                                val.asset = object;
+                                that.dec();
+                            });
+                        })(val);
+                        break;
+                }
+            }
+        }
+    };
+
     var scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000, 1, 100);
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -98,21 +151,29 @@
 
     scene.add(new THREE.DirectionalLightHelper(directionalLight));
 
-    var terrain = new Terrain(5);
+    var terrain = new Terrain(6);
     terrain.generate(0.2);
-    var texture = THREE.ImageUtils.loadTexture('assets/textures/UV_Grid_Sm.jpg', {}, function(){
+    var assetLoader = new AssetLoader(function(assets){
+        console.log('assets loaded', assets);
+        var terrainMaterial = new THREE.MeshBasicMaterial({ map: assets['terrainTexture'].asset, wireframe: false });
+        var x, y, terrainMesh;
+        for (x = 0; x < 3; x++){
+            for (y = 0; y < 3; y++){
+                terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
+                terrainMesh.position.x = (x - 1) * terrain.max;
+                terrainMesh.position.y = (y - 1) * terrain.max;
+                scene.add(terrainMesh);
+            }
+        }
+        var ship = assets['shipModel'].asset;
+        ship.position.set(0, 0, 20);
+//        ship.scale.set(10, 10, 10);
+        scene.add(ship);
         render();
     });
-    var terrainMaterial = new THREE.MeshBasicMaterial({ map: texture, wireframe: false });
-    var x, y, terrainMesh;
-    for (x = 0; x < 3; x++){
-        for (y = 0; y < 3; y++){
-            terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
-            terrainMesh.position.x = (x - 1) * terrain.max;
-            terrainMesh.position.y = (y - 1) * terrain.max;
-            scene.add(terrainMesh);
-        }
-    }
+    assetLoader.add('terrainTexture', 'texture', 'assets/textures/UV_Grid_Sm.jpg');
+    assetLoader.add('shipModel', 'objmtl', 'assets/models/rocket.obj', 'assets/models/rocket.mtl');
+    assetLoader.load();
 
     camera.position.z = 50;
 
