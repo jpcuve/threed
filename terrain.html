@@ -135,11 +135,41 @@
         }
     };
 
+    function Keyboard(){
+        var that = this;
+        this.keys = [];
+        this.onKeyUp = function(event) {
+            var code = event.which || event.keyCode, position;
+            while ((position = that.keys.indexOf(code)) >= 0) {
+                that.keys.splice(position, 1);
+                console.log('key up', event.keyCode);
+            }
+        };
+        this.onKeyDown = function(event){
+            var code = event.which || event.keyCode;
+            if (that.keys.indexOf(code) < 0){
+                console.log('key down', event.keyCode);
+                that.keys.push(code);
+            }
+        };
+        document.addEventListener('keydown', this.onKeyDown);
+        document.addEventListener('keyup', this.onKeyUp);
+    }
+
+    Keyboard.prototype.isPressed = function(code){
+        return this.keys.indexOf(code) >= 0;
+    };
+
+    Keyboard.prototype.destroy = function(){
+        document.removeEventListener('keydown', this.onKeyDown);
+        document.removeEventListener('keyup', this.onKeyUp);
+    };
+
+    var keyboard = new Keyboard();
     var scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000, 1, 100);
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     var orbitControls = new THREE.OrbitControls(camera);
-    orbitControls.addEventListener('change', render);
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -153,6 +183,7 @@
 
     var terrain = new Terrain(6);
     terrain.generate(0.2);
+    var ship;
     var assetLoader = new AssetLoader(function(assets){
         console.log('assets loaded', assets);
         var terrainMaterial = new THREE.MeshBasicMaterial({ map: assets['terrainTexture'].asset, wireframe: false });
@@ -165,11 +196,11 @@
                 scene.add(terrainMesh);
             }
         }
-        var ship = assets['shipModel'].asset;
+        ship = assets['shipModel'].asset;
         ship.position.set(0, 0, 20);
 //        ship.scale.set(10, 10, 10);
         scene.add(ship);
-        render();
+        animate();
     });
     assetLoader.add('terrainTexture', 'texture', 'assets/textures/UV_Grid_Sm.jpg');
     assetLoader.add('shipModel', 'objmtl', 'assets/models/rocket.obj', 'assets/models/rocket.mtl');
@@ -177,7 +208,20 @@
 
     camera.position.z = 50;
 
-    function render(){
+    function update(){
+        if (keyboard.isPressed(90)){
+            ship.position.x = ship.position.x + 0.1;
+        }
+        if (keyboard.isPressed(83)){
+            ship.position.x = ship.position.x - 0.1;
+        }
+
+    }
+
+    function animate(){
+        requestAnimationFrame(animate);
+        orbitControls.update();
+        update();
         renderer.render(scene, camera);
     }
 
