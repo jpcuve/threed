@@ -183,7 +183,7 @@
 
     var terrain = new Terrain(6);
     terrain.generate(0.1);
-    var ship;
+    var ship, shipAltitude = 20, shipYaw = 0, shipPitch = 0; // yaw = direction, pitch = inclinaison
     var assetLoader = new AssetLoader(function(assets){
         console.log('assets loaded', assets);
         var terrainMaterial = new THREE.MeshBasicMaterial({ map: assets['terrainTexture'].asset, wireframe: false });
@@ -197,36 +197,39 @@
             }
         }
         ship = assets['shipModel'].asset;
-        ship.position.set(0, 0, 20);
-/*
-        var roty = new THREE.Matrix4().makeRotationY(Math.PI / 6);
-        var rotz = new THREE.Matrix4().makeRotationZ(Math.PI / 4);
-        var rot = new THREE.Matrix4().multiplyMatrices(roty, rotz);
-        ship.matrix = rot;
-*/
+        ship.matrixAutoUpdate = false; // I will be computing this matrix myself
         scene.add(ship);
+        update();
         animate();
     });
     assetLoader.add('terrainTexture', 'texture', 'assets/textures/UV_Grid_Sm.jpg');
-    assetLoader.add('shipModel', 'objmtl', 'assets/models/ref.obj', 'assets/models/ref.mtl');
+    assetLoader.add('shipModel', 'objmtl', 'assets/models/ship.obj', 'assets/models/ship.mtl');
     assetLoader.load();
 
     camera.position.z = 50;
+    var inc = Math.PI / 90;
 
     function update(){
-        if (keyboard.isPressed(90)){
-            ship.rotation.y = ship.rotation.y + Math.PI / 90;
+        if (keyboard.isPressed(90)){ //z
+            shipPitch += inc;
         }
-        if (keyboard.isPressed(83)){
-            ship.rotation.y = ship.rotation.y - Math.PI / 90;
+        if (keyboard.isPressed(83)){ // s
+            shipPitch -= inc;
         }
-        if (keyboard.isPressed(81)){
-            ship.rotation.z = ship.rotation.z + Math.PI / 90;
+        if (keyboard.isPressed(81)){ // q
+            shipYaw += inc;
         }
-        if (keyboard.isPressed(68)){
-            ship.rotation.z = ship.rotation.z - Math.PI / 90;
+        if (keyboard.isPressed(68)){ // d
+            shipYaw -= inc;
         }
-
+        if (keyboard.isPressed(65)){ // a
+            shipYaw = shipPitch = 0;
+        }
+        ship.matrix = new THREE.Matrix4(); // identity
+        ship.matrix.multiply(new THREE.Matrix4().makeTranslation(0, 0, shipAltitude));
+        ship.matrix.multiply(new THREE.Matrix4().makeRotationZ(shipYaw));
+        ship.matrix.multiply(new THREE.Matrix4().makeRotationY(shipPitch));
+//        ship.matrix.multiply(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(Math.sin(shipYaw), -Math.cos(shipYaw), 0), shipPitch)));
     }
 
     function animate(){
