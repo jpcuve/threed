@@ -178,7 +178,6 @@
 
     var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.castShadow = true;
-    directionalLight.shadowCameraVisible = true;
     directionalLight.shadowCameraFar = 50;
     directionalLight.shadowCameraNear = 5;
     directionalLight.shadowMapWidth = 4096;
@@ -203,6 +202,10 @@
     var terrain = new Terrain(6);
     terrain.generate(0.1);
     var ship, shipAltitude = 20, shipYaw = 0, shipPitch = 0; // yaw = direction, pitch = inclinaison
+
+    var arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, shipAltitude), 10, 0xFF00FF);
+    scene.add(arrowHelper);
+
     var assetLoader = new AssetLoader(function(assets){
         console.log('assets loaded', assets);
         var terrainMaterial = new THREE.MeshBasicMaterial({ map: assets['terrainTexture'].asset,  wireframe: false });
@@ -251,10 +254,11 @@
         if (keyboard.isPressed(65)){ // a
             shipYaw = shipPitch = 0;
         }
-        ship.matrix = new THREE.Matrix4(); // identity
-        ship.matrix.multiply(new THREE.Matrix4().makeTranslation(0, 0, shipAltitude));
-        ship.matrix.multiply(new THREE.Matrix4().makeRotationZ(shipYaw));
-        ship.matrix.multiply(new THREE.Matrix4().makeRotationY(shipPitch));
+        var rotation = new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().makeRotationZ(shipYaw), new THREE.Matrix4().makeRotationY(shipPitch));
+        ship.matrix = new THREE.Matrix4().makeTranslation(0, 0, shipAltitude);
+        ship.matrix.multiply(rotation);
+        arrowHelper.setDirection(new THREE.Vector3(0, 0, 1).applyMatrix4(rotation));
+        arrowHelper.needsUpdate = true;
 //        ship.matrix.multiply(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(Math.sin(shipYaw), -Math.cos(shipYaw), 0), shipPitch)));
     }
 
