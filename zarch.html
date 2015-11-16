@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<script src="js/loaders/DDSLoader.js"></script>
+<script src="js/loaders/MTLLoader.js"></script>
+<script src="js/loaders/OBJMTLLoader.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script>
+    function Terrain(detail) {
+        this.max = Math.pow(2, detail);
+        this.size = this.max + 1;
+        this.map = new THREE.PlaneBufferGeometry(this.max, this.max, this.max, this.max);
+        this.positionArray = this.map.attributes.position.array;
+    }
+
+    Terrain.prototype.offset = function(x, y){
+        return (y  * this.size + x) * 3;
+    };
+
+    Terrain.prototype.set = function(x, y, z){
+        this.positionArray[this.offset(x, y) + 2] = z;
+    };
+
+    Terrain.prototype.get = function(x, y){
+        return this.positionArray[this.offset(x, y) + 2];
+    };
+
+    Terrain.prototype.mod = function(n, m){
+        return ((n % m) + m) % m;
+    };
+
+    Terrain.prototype.generate = function(roughness){
+        var i;
+        this.divide(this.max, roughness);
+        for (i = 0; i < this.max; i++){
+            this.set(i, this.max, this.get(i, 0));
+            this.set(this.max, i, this.get(0, i));
+        }
+    };
+
+    Terrain.prototype.diamond = function(x, y, disp, scale){
+//        console.log("diamond: (", x, ",", y, ")");
+        var xmin = this.mod(x - disp, this.max), xmax = this.mod(x + disp, this.max), ymin = this.mod(y - disp, this.max), ymax = this.mod(y + disp, this.max);
+        var average = (this.get(xmin, ymin) + this.get(xmin, ymax) + this.get(xmax, ymin) + this.get(xmax, ymax)) / 4;
+        this.set(x, y, average + Math.random() * scale * 2 - scale);
+    };
+
+    Terrain.prototype.square = function(x, y, disp, scale){
+//        console.log("square: (", x, ",", y, ")");
+        var xmin = this.mod(x - disp, this.max), xmax = this.mod(x + disp, this.max), ymin = this.mod(y - disp, this.max), ymax = this.mod(y + disp, this.max);
+        var average = (this.get(xmin, y) + this.get(x, ymax) + this.get(xmax, y) + this.get(x, ymin)) / 4;
+        var z = average + Math.random() * scale * 2 - scale;
+        this.set(x, y, z);
+    };
+
+    Terrain.prototype.divide = function(size, roughness) {
+        var x, y, half = size / 2;
+        var scale = roughness * size;
+        if (half < 1) return;
+        for (y = half; y < this.max; y += size) {
+            for (x = half; x < this.max; x += size) {
+                this.diamond(x, y, half, scale);
+            }
+        }
+        for (y = 0; y < this.max; y += half) {
+            for (x = (y % size == 0 ? half : 0); x < this.max; x += size) {
+                this.square(x, y, half, scale);
+            }
+        }
+        this.divide(size / 2, roughness);
+    };
+
+    function AssetLoader(callback){
+        this.map = {};
+        this.count = 0;
+        this.callback = callback;
+    }
+
+    AssetLoader.prototype.add = function(id, type, url, url2){
+        this.map[id] = {
+            type: type,
+            url: url,
+            url2: url2
+        };
+    };
+
+    AssetLoader.prototype.dec = function(){
+        this.count--;
+        if (this.count <= 0){
+            this.callback(this.map);
+        }
+    };
+
+    AssetLoader.prototype.load = function(){
+        this.count = 0;
+        var key, val, that = this;
+        for (key in this.map){
+            if (this.map.hasOwnProperty(key)){
+                this.count++;
+                val = this.map[key];
+                switch (val.type){
+                    case 'texture':
+                        (function(val){
+                            new THREE.TextureLoader().load(val.url, function(texture){
+                                val.asset = texture;
+                                that.dec();
+                            });
+                        })(val);
+                        break;
+                    case 'objmtl':
+                        (function(val){
+                            new THREE.OBJMTLLoader().load(val.url, val.url2, function(object){
+                                val.asset = object;
+                                that.dec();
+                            });
+                        })(val);
+                        break;
+                }
+            }
+        }
+    };
+
+    function Keyboard(){
+        var that = this;
+        this.keys = [];
+        this.onKeyUp = function(event) {
+            var code = event.which || event.keyCode, position;
+            while ((position = that.keys.indexOf(code)) >= 0) {
+                that.keys.splice(position, 1);
+                console.log('key up', event.keyCode);
+            }
+        };
+        this.onKeyDown = function(event){
+            var code = event.which || event.keyCode;
+            if (that.keys.indexOf(code) < 0){
+                console.log('key down', event.keyCode);
+                that.keys.push(code);
+            }
+        };
+        document.addEventListener('keydown', this.onKeyDown);
+        document.addEventListener('keyup', this.onKeyUp);
+    }
+
+    Keyboard.prototype.isPressed = function(code){
+        return this.keys.indexOf(code) >= 0;
+    };
+
+    Keyboard.prototype.destroy = function(){
+        document.removeEventListener('keydown', this.onKeyDown);
+        document.removeEventListener('keyup', this.onKeyUp);
+    };
+
+    var keyboard = new Keyboard();
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000, 1, 100);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var orbitControls = new THREE.OrbitControls(camera);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.castShadow = true;
+    directionalLight.shadowCameraFar = 50;
+    directionalLight.shadowCameraNear = 5;
+    directionalLight.shadowMapWidth = 4096;
+    directionalLight.shadowMapHeight = 4096;
+//    directionalLight.shadowCameraLeft = directionalLight.shadowCameraRight = directionalLight.shadowCameraLeft = directionalLight.shadowCameraRight = 50;
+    directionalLight.position.set(0, 0, 30);
+    scene.add(directionalLight);
+    scene.add(new THREE.CameraHelper(directionalLight.shadow.camera));
+
+    scene.add(new THREE.DirectionalLightHelper(directionalLight));
+
+    // draw a cube
+    var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
+    var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 9, metal: true, reflectivity: 9 });
+    cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    // make the cube cast and recieve shadow
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+    cube.position.set(5, 5, 5);
+    scene.add(cube);
+
+    var terrain = new Terrain(6);
+    terrain.generate(0.2);
+    var terrainCanvas = document.createElement('canvas');
+    terrainCanvas.width = terrainCanvas.height = terrain.max;
+    var ctx = terrainCanvas.getContext('2d');
+    var x, y, r, g, b;
+    for (y = 0; y < terrainCanvas.height; y++){
+        for (x = 0; x < terrainCanvas.width; x++){
+            r = (Math.random() * 256) | 0;
+            g = (Math.random() * 256) | 0;
+            b = (Math.random() * 256) | 0;
+            ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',255)';
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+    var terrainTexture = new THREE.Texture(terrainCanvas);
+    terrainTexture.needsUpdate = true;
+    var terrainMaterial = new THREE.MeshBasicMaterial({ map: terrainTexture,  wireframe: false });
+
+    var ship, shipAltitude = 20, shipYaw = 0, shipPitch = 0; // yaw = direction, pitch = inclinaison
+
+    var arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, shipAltitude), 10, 0xFF00FF);
+    scene.add(arrowHelper);
+
+    var assetLoader = new AssetLoader(function(assets){
+        console.log('assets loaded', assets);
+        var x, y, terrainMesh;
+        for (x = 0; x < 3; x++){
+            for (y = 0; y < 3; y++){
+                terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
+                terrainMesh.receiveShadow = true;
+                terrainMesh.position.set((x - 1) * terrain.max, (y - 1) * terrain.max, 0);
+                scene.add(terrainMesh);
+            }
+        }
+        ship = assets['shipModel'].asset;
+        ship.traverse(function(child){
+            if (child instanceof THREE.Mesh){
+                child.castShadow = true;
+            }
+        });
+        ship.matrixAutoUpdate = false; // I will be computing this matrix myself
+        ship.castShadow = true;
+        scene.add(ship);
+        update();
+        animate();
+    });
+    assetLoader.add('terrainTexture', 'texture', 'assets/textures/UV_Grid_Sm.jpg');
+    assetLoader.add('shipModel', 'objmtl', 'assets/models/ship.obj', 'assets/models/ship.mtl');
+    assetLoader.load();
+
+    camera.position.z = 50;
+    var inc = Math.PI / 90;
+
+    function update(){
+        if (keyboard.isPressed(90)){ //z
+            shipPitch += inc;
+        }
+        if (keyboard.isPressed(83)){ // s
+            shipPitch -= inc;
+        }
+        if (keyboard.isPressed(81)){ // q
+            shipYaw += inc;
+        }
+        if (keyboard.isPressed(68)){ // d
+            shipYaw -= inc;
+        }
+        if (keyboard.isPressed(65)){ // a
+            shipYaw = shipPitch = 0;
+        }
+        var rotation = new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().makeRotationZ(shipYaw), new THREE.Matrix4().makeRotationY(shipPitch));
+        ship.matrix = new THREE.Matrix4().makeTranslation(0, 0, shipAltitude);
+        ship.matrix.multiply(rotation);
+        arrowHelper.setDirection(new THREE.Vector3(0, 0, 1).applyMatrix4(rotation));
+        arrowHelper.needsUpdate = true;
+//        ship.matrix.multiply(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(Math.sin(shipYaw), -Math.cos(shipYaw), 0), shipPitch)));
+    }
+
+    function animate(){
+        requestAnimationFrame(animate);
+        orbitControls.update();
+        update();
+        renderer.render(scene, camera);
+    }
+
+</script>
+
+</body>
+</html>
