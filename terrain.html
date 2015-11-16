@@ -181,6 +181,8 @@
     directionalLight.shadowCameraVisible = true;
     directionalLight.shadowCameraFar = 50;
     directionalLight.shadowCameraNear = 5;
+    directionalLight.shadowMapWidth = 4096;
+    directionalLight.shadowMapHeight = 4096;
 //    directionalLight.shadowCameraLeft = directionalLight.shadowCameraRight = directionalLight.shadowCameraLeft = directionalLight.shadowCameraRight = 50;
     directionalLight.position.set(0, 0, 30);
     scene.add(directionalLight);
@@ -215,6 +217,11 @@
             }
         }
         ship = assets['shipModel'].asset;
+        ship.traverse(function(child){
+            if (child instanceof THREE.Mesh){
+                child.castShadow = true;
+            }
+        });
         ship.matrixAutoUpdate = false; // I will be computing this matrix myself
         ship.castShadow = true;
         scene.add(ship);
