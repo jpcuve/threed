@@ -21,30 +21,30 @@
 <script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
-    function Terrain(detail) {
+    function TerrainGenerator(detail) {
         this.max = Math.pow(2, detail);
         this.size = this.max + 1;
         this.map = new THREE.PlaneBufferGeometry(this.max, this.max, this.max, this.max);
         this.positionArray = this.map.attributes.position.array;
     }
 
-    Terrain.prototype.offset = function(x, y){
+    TerrainGenerator.prototype.offset = function(x, y){
         return (y  * this.size + x) * 3;
     };
 
-    Terrain.prototype.set = function(x, y, z){
+    TerrainGenerator.prototype.set = function(x, y, z){
         this.positionArray[this.offset(x, y) + 2] = z;
     };
 
-    Terrain.prototype.get = function(x, y){
+    TerrainGenerator.prototype.get = function(x, y){
         return this.positionArray[this.offset(x, y) + 2];
     };
 
-    Terrain.prototype.mod = function(n, m){
+    TerrainGenerator.prototype.mod = function(n, m){
         return ((n % m) + m) % m;
     };
 
-    Terrain.prototype.generate = function(roughness){
+    TerrainGenerator.prototype.generate = function(roughness){
         var i;
         this.divide(this.max, roughness);
         for (i = 0; i < this.max; i++){
@@ -53,14 +53,14 @@
         }
     };
 
-    Terrain.prototype.diamond = function(x, y, disp, scale){
+    TerrainGenerator.prototype.diamond = function(x, y, disp, scale){
 //        console.log("diamond: (", x, ",", y, ")");
         var xmin = this.mod(x - disp, this.max), xmax = this.mod(x + disp, this.max), ymin = this.mod(y - disp, this.max), ymax = this.mod(y + disp, this.max);
         var average = (this.get(xmin, ymin) + this.get(xmin, ymax) + this.get(xmax, ymin) + this.get(xmax, ymax)) / 4;
         this.set(x, y, average + Math.random() * scale * 2 - scale);
     };
 
-    Terrain.prototype.square = function(x, y, disp, scale){
+    TerrainGenerator.prototype.square = function(x, y, disp, scale){
 //        console.log("square: (", x, ",", y, ")");
         var xmin = this.mod(x - disp, this.max), xmax = this.mod(x + disp, this.max), ymin = this.mod(y - disp, this.max), ymax = this.mod(y + disp, this.max);
         var average = (this.get(xmin, y) + this.get(x, ymax) + this.get(xmax, y) + this.get(x, ymin)) / 4;
@@ -68,7 +68,7 @@
         this.set(x, y, z);
     };
 
-    Terrain.prototype.divide = function(size, roughness) {
+    TerrainGenerator.prototype.divide = function(size, roughness) {
         var x, y, half = size / 2;
         var scale = roughness * size;
         if (half < 1) return;
@@ -199,10 +199,10 @@
     cube.position.set(5, 5, 5);
     scene.add(cube);
 
-    var terrain = new Terrain(6);
-    terrain.generate(0.2);
+    var terrainGenerator = new TerrainGenerator(6);
+    terrainGenerator.generate(0.2);
     var terrainCanvas = document.createElement('canvas');
-    terrainCanvas.width = terrainCanvas.height = terrain.max;
+    terrainCanvas.width = terrainCanvas.height = terrainGenerator.max;
     var ctx = terrainCanvas.getContext('2d');
     var x, y, r, g, b;
     for (y = 0; y < terrainCanvas.height; y++){
@@ -216,24 +216,25 @@
     }
     var terrainTexture = new THREE.Texture(terrainCanvas);
     terrainTexture.needsUpdate = true;
-    var terrainMaterial = new THREE.MeshBasicMaterial({ map: terrainTexture,  wireframe: false });
+//    var terrainMaterial = new THREE.MeshBasicMaterial({ map: terrainTexture,  wireframe: false });
 
-    var ship;
+    var ship, terrain = new THREE.Object3D();
 
     var arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 10, 0xFF00FF);
     scene.add(arrowHelper);
 
     var assetLoader = new AssetLoader(function(assets){
         console.log('assets loaded', assets);
-        var x, y, terrainMesh;
+        var x, y, terrainMesh, terrainMaterial = new THREE.MeshBasicMaterial({ map: assets['terrainTexture'].asset,  wireframe: false });
         for (x = 0; x < 3; x++){
             for (y = 0; y < 3; y++){
-                terrainMesh = new THREE.Mesh(terrain.map, terrainMaterial);
+                terrainMesh = new THREE.Mesh(terrainGenerator.map, terrainMaterial);
                 terrainMesh.receiveShadow = true;
-                terrainMesh.position.set((x - 1) * terrain.max, (y - 1) * terrain.max, 0);
-                scene.add(terrainMesh);
+                terrainMesh.position.set((x - 1) * terrainGenerator.max, (y - 1) * terrainGenerator.max, 0);
+                terrain.add(terrainMesh);
             }
         }
+        scene.add(terrain);
         ship = assets['shipModel'].asset;
         ship.traverse(function(child){
             if (child instanceof THREE.Mesh){
@@ -242,10 +243,12 @@
         });
         ship.matrixAutoUpdate = false; // I will be computing this matrix myself
         ship.castShadow = true;
-        ship.position.set(0, 0, 20);
         ship.userData = {
             yaw: 0, // direction in z plane
-            pitch: 0 // climb from z plane
+            pitch: 0, // climb from z plane
+            push: new THREE.Vector3(0, 0, 0), // push from jet
+            speed: new THREE.Vector3(0, 0, 0), // absolute speed
+            position: new THREE.Vector3(0, 0, 20) // absolute position
         };
         scene.add(ship);
         update();
@@ -274,10 +277,13 @@
         if (keyboard.isPressed(65)){ // a
             ship.userData.yaw = ship.userData.pitch = 0;
         }
+        // compute ship altitude and terrain offset
+        ship.position.setZ(ship.userData.position.z);
+        terrain.position.set(-ship.userData.position.x, -ship.userData.position.y, 0);
         ship.userData.rotation = new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().makeRotationZ(ship.userData.yaw), new THREE.Matrix4().makeRotationY(ship.userData.pitch));
         ship.userData.direction = new THREE.Vector3(0, 0, 1).applyMatrix4(ship.userData.rotation);
         if (keyboard.isPressed(69)){ // e
-            ship.position.add(ship.userData.direction.clone().multiplyScalar(0.1));
+            ship.userData.position.add(ship.userData.direction.clone().multiplyScalar(0.1));
         }
         ship.matrix = new THREE.Matrix4().makeTranslation(ship.position.x, ship.position.y, ship.position.z);
         ship.matrix.multiply(ship.userData.rotation);
