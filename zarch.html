@@ -28,6 +28,17 @@
         this.positionArray = this.map.attributes.position.array;
     }
 
+    // coordinate adjust between -this.max / 2 and +this.max / 2
+    TerrainGenerator.prototype.adjust = function(x){
+        while (x > this.max / 2){
+            x -= this.max;
+        }
+        while (x < -this.max / 2){
+            x += this.max;
+        }
+        return x;
+    };
+
     TerrainGenerator.prototype.offset = function(x, y){
         return (y  * this.size + x) * 3;
     };
@@ -284,6 +295,7 @@
         ship.userData.direction = new THREE.Vector3(0, 0, 1).applyMatrix4(ship.userData.rotation);
         if (keyboard.isPressed(69)){ // e
             ship.userData.position.add(ship.userData.direction.clone().multiplyScalar(0.1));
+            ship.userData.position.set(terrainGenerator.adjust(ship.userData.position.x), terrainGenerator.adjust(ship.userData.position.y), ship.userData.position.z);
         }
         ship.matrix = new THREE.Matrix4().makeTranslation(ship.position.x, ship.position.y, ship.position.z);
         ship.matrix.multiply(ship.userData.rotation);
