@@ -294,9 +294,27 @@
         ship.userData.rotation = new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().makeRotationZ(ship.userData.yaw), new THREE.Matrix4().makeRotationY(ship.userData.pitch));
         ship.userData.direction = new THREE.Vector3(0, 0, 1).applyMatrix4(ship.userData.rotation);
         if (keyboard.isPressed(69)){ // e
-            ship.userData.position.add(ship.userData.direction.clone().multiplyScalar(0.1));
-            ship.userData.position.set(terrainGenerator.adjust(ship.userData.position.x), terrainGenerator.adjust(ship.userData.position.y), ship.userData.position.z);
+//            ship.userData.position.add(ship.userData.direction.clone().multiplyScalar(0.1));
+            ship.userData.push = new THREE.Vector3(0, 0, 1).applyMatrix4(ship.userData.rotation);
+        } else{
+            ship.userData.push.set(0, 0, 0);
         }
+        // update ship parameters, compute acceleration
+        var acceleration = new THREE.Vector3(0, 0, -1).multiplyScalar(0.001); // gravity
+        acceleration.add(ship.userData.push.clone().multiplyScalar(0.002)); // push
+        var drag = ship.userData.speed.clone().negate(), sq = drag.lengthSq();
+        acceleration.add(drag.setLength(sq).multiplyScalar(0.01));
+        // compute speed
+        ship.userData.speed.add(acceleration);
+        // compute position
+        ship.userData.position.add(ship.userData.speed);
+        if (ship.userData.position.z < 0){
+            // crash
+            ship.userData.push.set(0, 0, 0);
+            ship.userData.speed.set(0, 0, 0);
+            ship.userData.position.z = 0;
+        }
+        ship.userData.position.set(terrainGenerator.adjust(ship.userData.position.x), terrainGenerator.adjust(ship.userData.position.y), Math.max(ship.userData.position.z, 0));
         ship.matrix = new THREE.Matrix4().makeTranslation(ship.position.x, ship.position.y, ship.position.z);
         ship.matrix.multiply(ship.userData.rotation);
         arrowHelper.setDirection(ship.userData.direction);
