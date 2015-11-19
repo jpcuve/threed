@@ -21,20 +21,21 @@
 <script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
-    function TerrainGenerator(detail) {
+    function TerrainGenerator(detail, tile) {
         this.max = Math.pow(2, detail);
         this.size = this.max + 1;
-        this.map = new THREE.PlaneBufferGeometry(this.max, this.max, this.max, this.max);
+        this.edge = this.max * tile;
+        this.map = new THREE.PlaneBufferGeometry(this.edge, this.edge, this.max, this.max);
         this.positionArray = this.map.attributes.position.array;
     }
 
     // coordinate adjust between -this.max / 2 and +this.max / 2
     TerrainGenerator.prototype.adjust = function(x){
-        while (x > this.max / 2){
-            x -= this.max;
+        while (x > this.edge / 2){
+            x -= this.edge;
         }
-        while (x < -this.max / 2){
-            x += this.max;
+        while (x < -this.edge / 2){
+            x += this.edge;
         }
         return x;
     };
@@ -210,8 +211,8 @@
     cube.position.set(5, 5, 5);
     scene.add(cube);
 
-    var terrainGenerator = new TerrainGenerator(6);
-    terrainGenerator.generate(0.2);
+    var terrainGenerator = new TerrainGenerator(6, 4);
+    terrainGenerator.generate(0.4);
     var terrainCanvas = document.createElement('canvas');
     terrainCanvas.width = terrainCanvas.height = terrainGenerator.max;
     var ctx = terrainCanvas.getContext('2d');
@@ -241,7 +242,7 @@
             for (y = 0; y < 3; y++){
                 terrainMesh = new THREE.Mesh(terrainGenerator.map, terrainMaterial);
                 terrainMesh.receiveShadow = true;
-                terrainMesh.position.set((x - 1) * terrainGenerator.max, (y - 1) * terrainGenerator.max, 0);
+                terrainMesh.position.set((x - 1) * terrainGenerator.edge, (y - 1) * terrainGenerator.edge, 0);
                 terrain.add(terrainMesh);
             }
         }
@@ -301,7 +302,7 @@
         }
         // update ship parameters, compute acceleration
         var acceleration = new THREE.Vector3(0, 0, -1).multiplyScalar(0.001); // gravity
-        acceleration.add(ship.userData.push.clone().multiplyScalar(0.002)); // push
+        acceleration.add(ship.userData.push.clone().multiplyScalar(0.004)); // push
         var drag = ship.userData.speed.clone().negate(), sq = drag.lengthSq();
         acceleration.add(drag.setLength(sq).multiplyScalar(0.01));
         // compute speed
