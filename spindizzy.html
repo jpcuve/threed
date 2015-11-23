@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<script src="js/AssetLoader.js"></script>
+<script>
+    function Player(brushData, screenData){
+        this.brushes = {};
+        this.screens = {};
+        var brushCount = 0, screenCount = 0, offset, l, i, j;
+        offset = 0;
+        while (offset < brushData.length){
+            l = brushData[offset + 1];
+            this.brushes[brushData[offset]] = brushData.slice(offset, offset + l);
+            offset += l;
+            brushCount++;
+        }
+        console.log('brush count:', brushCount);
+        offset = 0;
+        while (offset < screenData.length){
+            l = screenData[offset];
+            j = screenData[offset + 1];
+            i = screenData[offset + 2];
+            this.screens[j << 8 + i] = screenData.slice(offset, offset + l);
+            offset += l;
+            screenCount++;
+        }
+        console.log('screen count:', screenCount);
+    }
+
+    Player.prototype.next = function(buffer, offset){
+        var l = 0, i;
+        for (i = offset; i < buffer.length; i++){
+            l = l << 8;
+            l |= buffer[i];
+        }
+        return l;
+    };
+
+    Player.prototype.brush = function(painter, x, y, z, r, index){
+        var brush = this.brushes[index], offset;
+        if (brush){
+            offset = 2;
+            while (offset < brush.length){
+                offset += this.do(painter, x, y, z, r, this.next(brush, offset));
+            }
+        }
+    };
+
+    Player.prototype.screen = function(painter, i, j){
+        var screen = this.screens[j << 8 + i], offset;
+        if (screen) {
+            console.log('painting screen:', screen);
+            offset = 4;
+            while (offset < screen.length){
+                offset += this.do(painter, 0, 0, 0, 0, this.next(screen, offset));
+            }
+        }
+    };
+
+    Player.prototype.do = function(painter, xo, yo, zo, ro, l){
+        var z = l >> 7 & 7;
+        var x = l >> 10 & 7;
+        var y = l >> 13 & 7;
+        if ((l & 0x1F) == 2){ // brush reference
+            this.brush(painter, x, y, z, l & 3, l >> 16);
+            return 3;
+        }
+        // choose method
+        var m = l && 0x7F;
+        var method = painter.basic;
+        switch(m >> 5){
+            case 1:
+                method = painter.extruded;
+                break;
+            case 3:
+                method = painter.column;
+                break;
+        }
+        var nature, type = 0, r = 0;
+        switch(m){
+            case 1:
+                nature = 'square';
+                break;
+            case 3:
+                nature = 'trampoline';
+                break;
+            case 0x40:
+                nature = 'water';
+                break;
+            case 0x43:
+                nature = 'ice';
+                break;
+            default:
+                if (m > 0x20){
+                    nature = 'arrow';
+                } else {
+                    nature = 'block';
+                    type = m >> 2 & 7;
+                }
+                r = m & 3;
+                break;
+        }
+        method(xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
+        return 2;
+
+    };
+
+    var assetLoader = new AssetLoader(function(assets) {
+        var player = new Player(assets['brushes'].asset, assets['screens'].asset);
+        player.screen(painter, 72, 78);
+    });
+    assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
+    assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
+    assetLoader.load();
+
+    var painter = {
+        basic: function(x, y, z, r){
+            console.log('basic');
+        },
+        extruded: function(x, y, z, r){
+            console.log('extruded');
+        },
+        column: function(x, y, z, r){
+            console.log('column');
+        },
+        cue: function(x, y, z, r){
+            console.log('cue');
+        },
+        special: function(x, y, z, r){
+            console.log('special');
+        }
+    };
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    var cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    var animate = function (){
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.1;
+        cube.rotation.y += 0.1;
+        renderer.render(scene, camera);
+    };
+
+</script>
+
+
+
+</body>
+</html>

@@ -20,6 +20,7 @@
 <script src="js/loaders/MTLLoader.js"></script>
 <script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
+<script src="js/AssetLoader.js"></script>
 <script>
     function TerrainGenerator(detail) {
         this.max = Math.pow(2, detail);
@@ -96,56 +97,6 @@
         this.divide(size / 2, roughness);
     };
 
-    function AssetLoader(callback){
-        this.map = {};
-        this.count = 0;
-        this.callback = callback;
-    }
-
-    AssetLoader.prototype.add = function(id, type, url, url2){
-        this.map[id] = {
-            type: type,
-            url: url,
-            url2: url2
-        };
-    };
-
-    AssetLoader.prototype.dec = function(){
-        this.count--;
-        if (this.count <= 0){
-            this.callback(this.map);
-        }
-    };
-
-    AssetLoader.prototype.load = function(){
-        this.count = 0;
-        var key, val, that = this;
-        for (key in this.map){
-            if (this.map.hasOwnProperty(key)){
-                this.count++;
-                val = this.map[key];
-                switch (val.type){
-                    case 'texture':
-                        (function(val){
-                            new THREE.TextureLoader().load(val.url, function(texture){
-                                val.asset = texture;
-                                that.dec();
-                            });
-                        })(val);
-                        break;
-                    case 'objmtl':
-                        (function(val){
-                            new THREE.OBJMTLLoader().load(val.url, val.url2, function(object){
-                                val.asset = object;
-                                that.dec();
-                            });
-                        })(val);
-                        break;
-                }
-            }
-        }
-    };
-
     function Keyboard(){
         var that = this;
         this.keys = [];
@@ -215,6 +166,7 @@
     var terrainCanvas = document.createElement('canvas');
     terrainCanvas.width = terrainCanvas.height = terrainGenerator.max;
     var ctx = terrainCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     var x, y, r, g, b;
     for (y = 0; y < terrainCanvas.height; y++){
         for (x = 0; x < terrainCanvas.width; x++){
@@ -226,6 +178,7 @@
         }
     }
     var terrainTexture = new THREE.Texture(terrainCanvas);
+    terrainTexture.anisotropy  = renderer.getMaxAnisotropy();
     terrainTexture.needsUpdate = true;
 //    var terrainMaterial = new THREE.MeshBasicMaterial({ map: terrainTexture,  wireframe: false });
 
