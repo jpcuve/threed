@@ -42,42 +42,37 @@
         console.log('screen count:', screenCount);
     }
 
-    Player.prototype.next = function(buffer, offset){ // TODO inverted
-        var l = 0, i;
-        for (i = offset; i < buffer.length; i++){
-            l = l << 8;
-            l |= buffer[i];
-        }
-        return l;
-    };
-
     Player.prototype.brush = function(painter, x, y, z, r, index){
+        console.log('brush:', index);
         var brush = this.brushes[index], offset;
         if (brush){
             offset = 2;
             while (offset < brush.length){
-                offset += this.do(painter, x, y, z, r, this.next(brush, offset));
+                offset += this.paint(painter, x, y, z, r, brush, offset);
             }
         }
     };
 
     Player.prototype.screen = function(painter, i, j){
+        console.log('screen:', i, j);
         var screen = this.screens[j << 8 + i], offset;
         if (screen) {
-            console.log('painting screen:', screen);
-            offset = 4;
-            while (offset < screen.length){ // TODO not correct as there are objects beyond this
-                offset += this.do(painter, 0, 0, 0, 0, this.next(screen, offset));
+            // TODO process floor
+            offset = 6;
+            while (screen[offset] != 0){
+                offset += this.paint(painter, 0, 0, 0, 0, screen, offset);
             }
+            // TODO process objects
         }
     };
 
-    Player.prototype.do = function(painter, xo, yo, zo, ro, l){
+    Player.prototype.paint = function(painter, xo, yo, zo, ro, buffer, offset){
+        var l = buffer[offset] + (buffer[offset + 1] << 8);
         var z = l >> 7 & 7;
         var x = l >> 10 & 7;
         var y = l >> 13 & 7;
         if ((l & 0x1F) == 2){ // brush reference
-            this.brush(painter, x, y, z, l & 3, l >> 16);
+            this.brush(painter, x, y, z, l & 3, buffer[offset + 2]);
             return 3;
         }
         // choose method
@@ -130,20 +125,20 @@
     assetLoader.load();
 
     var painter = {
-        basic: function(x, y, z, r){
-            console.log('basic');
+        basic: function(x, y, z, r, nature, type){
+            console.log('basic', x, y, z, r, nature, type);
         },
-        extruded: function(x, y, z, r){
-            console.log('extruded');
+        extruded: function(x, y, z, r, nature, type){
+            console.log('extruded', x, y, z, r, nature, type);
         },
-        column: function(x, y, z, r){
-            console.log('column');
+        column: function(x, y, z, r, nature, type){
+            console.log('column', x, y, z, r, nature, type);
         },
-        cue: function(x, y, z, r){
-            console.log('cue');
+        cue: function(x, y, z, r, nature, type){
+            console.log('cue', x, y, z, r, nature, type);
         },
         special: function(x, y, z, r){
-            console.log('special');
+            console.log('special', x, y, z, r);
         }
     };
 

@@ -28,8 +28,9 @@
     var pointsGeometry = new THREE.Geometry();
     for (i = 0; i < 1000; i++){
         pointsGeometry.vertices.push(new THREE.Vector3(Math.random() * 500 - 250, Math.random() * 500 - 250, Math.random() * 500 - 250));
+        pointsGeometry.colors.push(new THREE.Color((Math.random() * 0xFFFFFF) | 0));
     }
-    var pointsMaterial = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 5});
+    var pointsMaterial = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 5, vertexColors: THREE.VertexColors});
     var pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial);
     scene.add(pointsSystem);
 
