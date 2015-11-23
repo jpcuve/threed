@@ -42,7 +42,7 @@
         console.log('screen count:', screenCount);
     }
 
-    Player.prototype.next = function(buffer, offset){
+    Player.prototype.next = function(buffer, offset){ // TODO inverted
         var l = 0, i;
         for (i = offset; i < buffer.length; i++){
             l = l << 8;
@@ -66,7 +66,7 @@
         if (screen) {
             console.log('painting screen:', screen);
             offset = 4;
-            while (offset < screen.length){
+            while (offset < screen.length){ // TODO not correct as there are objects beyond this
                 offset += this.do(painter, 0, 0, 0, 0, this.next(screen, offset));
             }
         }
