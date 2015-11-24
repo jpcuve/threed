@@ -153,10 +153,16 @@
         var player = new Player(assets['brushes'].asset, assets['screens'].asset);
         player.screen(paint, 58, 69);
         var x, y, ar;
-        for (y = 0; y < 128; y++){
+        for (y = 40; y < 80; y++){
+            if (y % 10 == 0){
+                console.log("-");
+            }
             ar = [];
-            for (x = 0; x < 128; x++){
-                if (player.screen(paint, x, y)){
+            for (x = 40; x < 90; x++) {
+                if (x % 10 == 0) {
+                    ar.push(" ");
+                }
+                if (player.screen(paint, x, y)) {
                     ar.push("*");
                 } else {
                     ar.push(".");
