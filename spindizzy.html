@@ -56,23 +56,12 @@
     };
 
     Player.prototype.screen = function(paint, i, j){
-//        console.log('screen:', i, j);
+        console.log('screen:', i, j);
         var screen = this.screens[(j << 8) + i], offset;
         if (screen) {
             // TODO process floor
             var l = screen[4] + screen[5] << 8;
             var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
-/*
-            while (x < 8){
-                while (y < 8){
-                    y++;
-
-
-                }
-                x++;
-            }
-*/
-
             offset = 6;
             while (screen[offset] != 0){
                 offset += this.terrain(paint, 0, 0, 0, 0, screen, offset);
@@ -146,12 +135,12 @@
     };
 
     function paint(method, x, y, z, r, nature, type){
-//        console.log(method, x, y, z, r, nature, type);
+        console.log(method, x, y, z, r, nature, type);
     }
 
     var assetLoader = new AssetLoader(function(assets) {
         var player = new Player(assets['brushes'].asset, assets['screens'].asset);
-        player.screen(paint, 58, 69);
+        player.screen(paint, 22, 25);
         var x, y, ar;
         for (y = 40; y < 80; y++){
             if (y % 10 == 0){
