@@ -22,6 +22,7 @@
     function Player(brushData, screenData){
         this.brushes = {};
         this.screens = {};
+        this.methods = ['basic', 'extruded', 'clue', 'column', 'special'];
         var brushCount = 0, screenCount = 0, offset, l, i, j;
         offset = 0;
         while (offset < brushData.length){
@@ -43,54 +44,69 @@
         console.log('screen count:', screenCount);
     }
 
-    Player.prototype.brush = function(painter, x, y, z, r, index){
+    Player.prototype.brush = function(paint, x, y, z, r, index){
         console.log('brush:', index);
         var brush = this.brushes[index], offset;
         if (brush){
             offset = 2;
             while (offset < brush.length){
-                offset += this.paint(painter, x, y, z, r, brush, offset);
+                offset += this.terrain(paint, x, y, z, r, brush, offset);
             }
         }
     };
 
-    Player.prototype.screen = function(painter, i, j){
+    Player.prototype.screen = function(paint, i, j){
         console.log('screen:', i, j);
         var screen = this.screens[j << 8 + i], offset;
         if (screen) {
             // TODO process floor
+            var l = screen[4] + screen[5] << 8;
+            var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
+            while (x < 8){
+                while (y < 8){
+                    y++;
+
+
+                }
+                x++;
+            }
+
             offset = 6;
             while (screen[offset] != 0){
-                offset += this.paint(painter, 0, 0, 0, 0, screen, offset);
+                offset += this.terrain(paint, 0, 0, 0, 0, screen, offset);
             }
-            // TODO process objects
+            offset += 2;
+            while(screen[offset] != 0){
+                offset += this.special(paint, 0, 0, 0, 0, screen, offset);
+            }
         }
     };
 
-    Player.prototype.paint = function(painter, xo, yo, zo, ro, buffer, offset){
+    Player.prototype.special = function(paint, xo, yo, zo, ro, buffer, offset){
+        var l = buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16);
+        var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
+        var nature = 'undefined';
+        if ((l & 0x7F) === 1){
+            nature = 'jewel';
+        } else if ((l & 0x7) === 2){
+            nature = 'lift';
+        } else if ((l & 0x77) === 3){
+            nature = 'enemy';
+        } else if ((l & 4) === 4){
+            nature = 'puzzle';
+        }
+        paint(this.methods[4], xo + x, yo + y, zo + z, ro, nature, l);
+        return 3;
+    };
+
+    Player.prototype.terrain = function(paint, xo, yo, zo, ro, buffer, offset){
         var l = buffer[offset] + (buffer[offset + 1] << 8);
-        var z = l >> 7 & 7;
-        var x = l >> 10 & 7;
-        var y = l >> 13 & 7;
-        if ((l & 0x1F) == 2){ // brush reference
-            this.brush(painter, x, y, z, l & 3, buffer[offset + 2]);
+        var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
+        if ((l & 0x1F) === 2){ // brush reference
+            this.brush(paint, x, y, z, l & 3, buffer[offset + 2]);
             return 3;
         }
-        // choose method
-        var m = l && 0x7F;
-        var method = painter.basic;
-        switch(m >> 5){
-            case 1:
-                method = painter.extruded;
-                break;
-            case 2:
-                method = painter.clue;
-                break;
-            case 3:
-                method = painter.column;
-                break;
-        }
-        var nature, type = 0, r = 0;
+        var m = l && 0x7F, nature, type = 0, r = 0;
         switch(m){
             case 1:
                 nature = 'square';
@@ -104,7 +120,6 @@
             case 0x43:
                 nature = 'ice';
                 break;
-            // TODO missing 'clue'
             default:
                 if (m > 0x20){
                     if (m & 0x20){
@@ -122,37 +137,22 @@
                 }
                 break;
         }
-        method(xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
+        paint(this.methods[(m >> 5) & 3], xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
         return 2;
-
     };
+
+    function paint(method, x, y, z, r, nature, type){
+        console.log(method, x, y, z, r, nature, type);
+    }
 
     var assetLoader = new AssetLoader(function(assets) {
         var player = new Player(assets['brushes'].asset, assets['screens'].asset);
-        player.screen(painter, 72, 78);
+        player.screen(paint, 58, 69);
         animate();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
     assetLoader.load();
-
-    var painter = {
-        basic: function(x, y, z, r, nature, type){
-            console.log('basic', x, y, z, r, nature, type);
-        },
-        extruded: function(x, y, z, r, nature, type){
-            console.log('extruded', x, y, z, r, nature, type);
-        },
-        column: function(x, y, z, r, nature, type){
-            console.log('column', x, y, z, r, nature, type);
-        },
-        clue: function(x, y, z, r, nature, type){
-            console.log('cue', x, y, z, r, nature, type);
-        },
-        special: function(x, y, z, r){
-            console.log('special', x, y, z, r);
-        }
-    };
 
     var scene = new THREE.Scene();
     var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: true }));
@@ -160,7 +160,6 @@
 
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     var orbitControls = new THREE.OrbitControls(camera);
-    scene.add(orbitControls);
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -171,9 +170,10 @@
     var cube = new THREE.Mesh(geometry, material);
 //    scene.add(cube);
 
-    camera.position.z = 5;
+    camera.position.z = 10;
 
     var animate = function (){
+        orbitControls.update();
         requestAnimationFrame(animate);
         cube.rotation.x += 0.1;
         cube.rotation.y += 0.1;
