@@ -16,6 +16,7 @@
 </head>
 <body>
 <script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
 <script src="js/AssetLoader.js"></script>
 <script>
     function Player(brushData, screenData){
@@ -82,6 +83,9 @@
             case 1:
                 method = painter.extruded;
                 break;
+            case 2:
+                method = painter.clue;
+                break;
             case 3:
                 method = painter.column;
                 break;
@@ -103,12 +107,19 @@
             // TODO missing 'clue'
             default:
                 if (m > 0x20){
-                    nature = 'arrow';
+                    if (m & 0x20){
+                        nature = 'arrow';
+                        r = m & 3;
+                    } else {
+                        nature = 'clue';
+                        type = m & 0xF;
+                        r = 0;
+                    }
                 } else {
                     nature = 'block';
                     type = m >> 2 & 7;
+                    r = m & 3;
                 }
-                r = m & 3;
                 break;
         }
         method(xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
@@ -119,6 +130,7 @@
     var assetLoader = new AssetLoader(function(assets) {
         var player = new Player(assets['brushes'].asset, assets['screens'].asset);
         player.screen(painter, 72, 78);
+        animate();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
@@ -134,7 +146,7 @@
         column: function(x, y, z, r, nature, type){
             console.log('column', x, y, z, r, nature, type);
         },
-        cue: function(x, y, z, r, nature, type){
+        clue: function(x, y, z, r, nature, type){
             console.log('cue', x, y, z, r, nature, type);
         },
         special: function(x, y, z, r){
@@ -143,7 +155,12 @@
     };
 
     var scene = new THREE.Scene();
+    var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: true }));
+    scene.add(plane);
+
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var orbitControls = new THREE.OrbitControls(camera);
+    scene.add(orbitControls);
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -152,7 +169,7 @@
     var geometry = new THREE.BoxGeometry(1, 1, 1);
     var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     var cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+//    scene.add(cube);
 
     camera.position.z = 5;
 
