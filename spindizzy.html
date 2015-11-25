@@ -22,7 +22,7 @@
     function Player(brushData, screenData){
         this.brushes = {};
         this.screens = {};
-        this.methods = ['basic', 'extruded', 'clue', 'column', 'special'];
+        this.methods = ['basic', 'extruded', 'basic', 'column', 'special'];
         this.i0 = 0;
         this.j0 = 0;
         var brushCount = 0, screenCount = 0, offset, l, i, j;
@@ -39,7 +39,7 @@
             l = screenData[offset];
             j = screenData[offset + 1];
             i = screenData[offset + 2];
-            if (i & 0x80){
+            if ((i & 0x80) !== 0){
                 i -= 0x80;
                 this.i0 = i;
                 this.j0 = j;
@@ -56,7 +56,7 @@
         var brush = this.brushes[index], offset;
         if (brush){
             offset = 2;
-            while (offset < brush.length){
+            while (offset < brush.length - 2){
                 offset += this.terrain(level, paint, x, y, z, r, brush, offset);
             }
         }
@@ -69,13 +69,13 @@
         if (screen) {
             var l = screen[4] + screen[5] << 8;
             var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
-            // TODO process floor
+            // TODO process floor, using x and y
             offset = 6;
-            while (screen[offset] != 0){
+            while (!(screen[offset] == 0 && screen[offset + 1] == 0)){
                 offset += this.terrain(level, paint, 0, 0, 0, 0, screen, offset);
             }
             offset += 2;
-            while(screen[offset] != 0){
+            while(offset < screen.length - 2){
                 offset += this.special(level, paint, 0, 0, 0, 0, screen, offset);
             }
             console.log(level, '> end screen:', i, j);
@@ -105,41 +105,40 @@
         var l = buffer[offset] + (buffer[offset + 1] << 8);
         var z = l >> 7 & 7, x = l >> 10 & 7, y = l >> 13 & 7;
         if ((l & 0x1F) === 2){ // brush reference
-            this.brush(level + 1, paint, x, y, z, l & 3, buffer[offset + 2]);
+            this.brush(level + 1, paint, xo + x, yo + y, zo + z, l & 3, buffer[offset + 2]);
             return 3;
         }
-        var m = l && 0x7F, nature, type = 0, r = 0;
-        switch(m){
+        var f = l & 0x7F, m = f >> 5, t = f >> 2 & 7, r = l & 0x3, nature = 'undefined', type = 0;
+        switch(f){
             case 1:
+            case 0x21:
+            case 0x61:
                 nature = 'square';
                 break;
             case 3:
+            case 0x23:
+            case 0x63:
                 nature = 'trampoline';
                 break;
-            case 0x40:
+            case 0x20:
                 nature = 'water';
                 break;
             case 0x43:
                 nature = 'ice';
                 break;
             default:
-                if (m > 0x20){
-                    if (m & 0x20){
-                        nature = 'arrow';
-                        r = m & 3;
-                    } else {
-                        nature = 'clue';
-                        type = m & 0xF;
-                        r = 0;
-                    }
+                if ((f & 0x50) === 0x50){
+                    nature = 'clue';
+                    type = f & 0xF;
+                } else if ((f & 0x44) === 0x44){
+                    nature = 'arrow';
                 } else {
                     nature = 'block';
-                    type = m >> 2 & 7;
-                    r = m & 3;
+                    type = t;
                 }
                 break;
         }
-        paint(this.methods[(m >> 5) & 3], xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
+        paint(this.methods[m], xo + x, yo + y, zo + z, (ro + r) & 3, nature, type);
         return 2;
     };
 
