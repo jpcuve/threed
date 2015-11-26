@@ -19,7 +19,26 @@
 <script src="js/OrbitControls.js"></script>
 <script src="js/AssetLoader.js"></script>
 <script>
+
+    var debug = 0;
+
+    THREE.Vector3.prototype.rotz44 = function(r){
+        "use strict";
+        switch(r % 4){
+            case 1:
+                this.set(7 - this.y, this.x, this.z);
+                break;
+            case 2:
+                this.set(7 - this.x, 7 - this.y, this.z);
+                break;
+            case 3:
+                this.set(this.y, 7 - this.x, this.z);
+                break;
+        }
+    };
+
     function Player(brushData, screenData){
+        "use strict";
         this.brushes = {};
         this.screens = {};
         this.methods = ['basic', 'extruded', 'basic', 'column', 'special'];
@@ -31,7 +50,9 @@
             offset += l;
             brushCount++;
         }
-        console.log('brush count:', brushCount);
+        if (debug){
+            console.log('brush count:', brushCount);
+        }
         offset = 0;
         while (offset < screenData.length){
             l = screenData[offset];
@@ -45,59 +66,39 @@
             offset += l;
             screenCount++;
         }
-        console.log('screen count:', screenCount);
+        if (debug){
+            console.log('screen count:', screenCount);
+        }
     }
 
-    Player.prototype.rotate = function(p, r){
-        var v;
-        switch(r % 4){
-            case 1:
-                v = 7 - p.y;
-                p.set(v, p.x);
-                break;
-            case 2:
-                v = 7 - p.x;
-                p.set(v, 7 - p.y);
-                break;
-            case 3:
-                v = p.y;
-                p.set(v, 7 - p.x);
-                break;
-        }
-    };
-
-    Player.prototype.terrain2 = function(level, paint, po, ro, buffer, offset){
-        var l, p, i;
+    Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
+        "use strict";
+        var l, p;
         while ((l = buffer[offset] + (buffer[offset + 1] << 8)) != 0){
             p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-//            console.log('local position: (', p.x, ',', p.y, ',', p.z, ')');
-            p.add(po);
-            // apply rotation
-/*
-            for (i = 0; i < ro; i++){
-                var xp = 7 - p.y;
-                p.setY(p.x);
-                p.setX(xp);
+            if (debug){
+                console.log('local position: (', p.x, ',', p.y, ',', p.z, ')');
             }
-*/
-            this.rotate(p, ro);
+            p.add(po);
+            p.rotz44(ro); // apply rotation
             var f = l & 0x7F, m = f >> 5, t = f >> 2 & 7, r = 0, nature = 'undefined', type = 0;
-            if ((f & 0x1F) === 2) {
+            if ((f & 0x1F) === 2) { // brush
                 var index = buffer[offset + 2], brush = this.brushes[index];
-                if (index == 25){
-                    console.log('check');
-                }
                 r = (l >> 5) & 3;
-                console.log(level + 1, '> brush:', index, ', local rotation:', r);
-                this.terrain2(level + 1, paint, p, ro + r, brush, 2);
-                console.log(level + 1, '> end brush:', index);
+                if (debug){
+                    console.log(level + 1, '> brush:', index, ', local rotation:', r);
+                }
+                this.terrain(paint, p, ro + r, brush, 2, level + 1);
+                if (debug){
+                    console.log(level + 1, '> end brush:', index);
+                }
                 offset++;
             } else {
                 switch(f){
                     case 1:
                     case 0x21:
                     case 0x61:
-                        nature = 'square';
+                        nature = 'block';
                         break;
                     case 3:
                     case 0x23:
@@ -118,7 +119,7 @@
                             nature = 'arrow';
                             r = f & 3;
                         } else {
-                            nature = 'block';
+                            nature = 'slope';
                             type = t;
                             r = f & 3;
                         }
@@ -131,111 +132,46 @@
         return offset + 2;
     };
 
-    Player.prototype.brush = function(level, paint, x, y, z, r, index){
-        console.log(level,'> brush:', index);
-        var brush = this.brushes[index], offset;
-        if (brush){
-            if (index === 29){
-                console.log('index is 29');
+    Player.prototype.special = function(paint, po, ro, buffer, offset){
+        "use strict";
+        var l, p, nature;
+        while (buffer[offset] != 0){
+            l = buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16);
+            p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
+            nature = 'undefined';
+            if ((l & 0x7F) === 1){
+                nature = 'jewel';
+            } else if ((l & 0x7) === 2){
+                nature = 'lift';
+            } else if ((l & 0x77) === 3){
+                nature = 'enemy';
+            } else if ((l & 4) === 4){
+                nature = 'puzzle';
             }
-            offset = 2;
-            while (offset < brush.length - 2){
-                offset += this.terrain(level, paint, x, y, z, r, brush, offset);
-            }
+            paint(this.methods[4], new THREE.Vector3().addVectors(po, p), ro, nature, l);
+            offset += 3;
         }
-        console.log(level, '> end brush:', index);
+        return offset;
     };
 
     Player.prototype.screen = function(paint, p){
+        "use strict";
         var screen = this.screens[(p.y << 8) + p.x], offset;
         if (screen) {
             console.log('0 > screen:', p.x, p.y);
             var l = screen[4] + screen[5] << 8;
 //            var p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
             // TODO process floor, using x and y
-            offset = this.terrain2(0, paint, new THREE.Vector3(), 0, screen, 6);
-/*
-            offset = 6;
-            while (!(screen[offset] == 0 && screen[offset + 1] == 0)){
-                offset += this.terrain(level, paint, new THREE.Vector3(), 0, screen, offset);
-            }
-            offset += 2;
-*/
-            while(offset < screen.length - 2){
-                offset += this.special(paint, new THREE.Vector3(), 0, screen, offset);
-            }
+            offset = this.terrain(paint, new THREE.Vector3(), 0, screen, 6, 0);
+            offset = this.special(paint, new THREE.Vector3(), 0, screen, offset);
             console.log('0 > end screen:', p.x, p.y);
             return true;
         }
         return false;
     };
 
-    Player.prototype.special = function(paint, po, ro, buffer, offset){
-        var l = buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16);
-        var p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-        var nature = 'undefined';
-        if ((l & 0x7F) === 1){
-            nature = 'jewel';
-        } else if ((l & 0x7) === 2){
-            nature = 'lift';
-        } else if ((l & 0x77) === 3){
-            nature = 'enemy';
-        } else if ((l & 4) === 4){
-            nature = 'puzzle';
-        }
-        paint(this.methods[4], new THREE.Vector3().addVectors(po, p), ro, nature, l);
-        return 3;
-    };
-
-    Player.prototype.terrain = function(level, paint, po, ro, buffer, offset){
-        var l = buffer[offset] + (buffer[offset + 1] << 8);
-        var p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-        if ((l & 0x1F) === 2){ // brush reference
-            this.brush(level + 1, paint, xo + x, yo + y, zo + z, (ro + r) & 3, buffer[offset + 2]);
-            return 3;
-        }
-        var f = l & 0x7F, m = f >> 5, t = f >> 2 & 7, nature = 'undefined', type = 0;
-        switch(f){
-            case 1:
-            case 0x21:
-            case 0x61:
-                nature = 'square';
-                break;
-            case 3:
-            case 0x23:
-            case 0x63:
-                nature = 'trampoline';
-                break;
-            case 0x20:
-                nature = 'water';
-                break;
-            case 0x43:
-                nature = 'ice';
-                break;
-            default:
-                if ((f & 0x50) === 0x50){
-                    nature = 'clue';
-                    type = f & 0xF;
-                } else if ((f & 0x44) === 0x44){
-                    nature = 'arrow';
-                } else {
-                    nature = 'block';
-                    type = t;
-                }
-                break;
-        }
-        paint(this.methods[m], new THREE.Vector3().addVectors(po, p), ro + r, nature, type);
-        return 2;
-    };
-
-    function paint(method, p, r, nature, type){
-        console.log(method,'(', p.x, ',', p.y, ',', p.z, ')', r, nature, type);
-    }
-
-    var assetLoader = new AssetLoader(function(assets) {
-        var player = new Player(assets['brushes'].asset, assets['screens'].asset);
-        player.screen(paint, player.start);
-/*
+    Player.prototype.dump = function(){
+        "use strict";
         var x, y, ar;
         for (y = 40; y < 80; y++){
             if (y % 10 == 0){
@@ -246,7 +182,7 @@
                 if (x % 10 == 0) {
                     ar.push(" ");
                 }
-                if (player.screen(paint, x, y)) {
+                if (this.screen(paint, x, y)) {
                     ar.push("*");
                 } else {
                     ar.push(".");
@@ -254,7 +190,19 @@
             }
             console.log(ar.join(""));
         }
-*/
+    };
+
+
+    function paint(method, p, r, nature, type){
+        "use strict";
+        console.log(method,'(', p.x, ',', p.y, ',', p.z, ')', r, nature, type);
+    }
+
+    var assetLoader = new AssetLoader(function(assets) {
+        "use strict";
+        var player = new Player(assets['brushes'].asset, assets['screens'].asset);
+        player.screen(paint, player.start);
+        animate();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
@@ -279,6 +227,7 @@
     camera.position.z = 10;
 
     var animate = function (){
+        "use strict";
         orbitControls.update();
         requestAnimationFrame(animate);
         cube.rotation.x += 0.1;
