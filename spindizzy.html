@@ -180,7 +180,6 @@
             this.floor[0] = screen[4];
             for (x = screen[5] >> 2 & 7; x < 8; x++){
                 for (y = screen[5] >> 5 & 7; y < 8; y++){
-                    console.log('x,y',x, y);
                     this.floor[1] = (y << 5) + (x << 2) + (screen[5] & 3);
                     this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
                 }
