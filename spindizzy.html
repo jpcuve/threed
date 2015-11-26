@@ -18,6 +18,7 @@
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script src="js/AssetLoader.js"></script>
+<script src="js/Keyboard.js"></script>
 <script>
 
     var debug = 1;
@@ -48,6 +49,7 @@
         this.brushes = {};
         this.screens = {};
         this.layouts = ['basic', 'extruded', 'basic', 'column', 'special'];
+        this.floor = new Uint8Array(4).fill(0);
         var brushCount = 0, screenCount = 0, offset, l, i, j;
         offset = 0;
         while (offset < brushData.length){
@@ -82,9 +84,6 @@
         var l, p, r, nature, type;
         while ((l = buffer[offset] + (buffer[offset + 1] << 8)) != 0){
             p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-            if (p.y > 7){
-                console.log('stop2');
-            }
             var f = l & 0x7F, m = f >> 5, t = f >> 2 & 7;
             if ((f & 0x1F) === 2) { // brush
                 var index = buffer[offset + 2], brush = this.brushes[index];
@@ -117,17 +116,17 @@
                     case 0x63:
                         nature = 'trampoline';
                         break;
-                    case 0x20:
+                    case 0x40:
                         nature = 'water';
                         break;
                     case 0x43:
                         nature = 'ice';
                         break;
                     default:
-                        if ((f & 0x50) === 0x50){
+                        if ((f & 0x70) === 0x50){
                             nature = 'clue';
                             type = f & 0xF;
-                        } else if ((f & 0x44) === 0x44){
+                        } else if ((f & 0x7C) === 0x44){
                             nature = 'arrow';
                             r = f & 3;
                         } else {
@@ -139,15 +138,9 @@
                 }
                 if (debug){
                     console.log('local block: (', p.x, ',', p.y, ',', p.z, ')r:' , r);
-                    if (p.x === 1 && p.y === 0 && p.z === 0){
-                        console.log('stop3');
-                    }
                 }
                 p.add8(po);
                 p.rotz44(ro); // apply rotation
-                if (p.y === 8){
-                    console.log('stop');
-                }
                 paint(this.layouts[m], p, ro + r, nature, type);
             }
             offset += 2;
@@ -179,22 +172,27 @@
 
     Player.prototype.screen = function(paint, p, ro){
         "use strict";
-        var screen = this.screens[(p.y << 8) + p.x], offset;
+        var screen = this.screens[(p.y << 8) + p.x], offset, x, y;
         if (screen) {
             if (debug){
                 console.log('0 > screen:', p.x, p.y);
             }
-            var l = screen[4] + screen[5] << 8;
-//            var p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-            // TODO process floor, using x and y
+            this.floor[0] = screen[4];
+            for (x = screen[5] >> 2 & 7; x < 8; x++){
+                for (y = screen[5] >> 5 & 7; y < 8; y++){
+                    console.log('x,y',x, y);
+                    this.floor[1] = (y << 5) + (x << 2) + (screen[5] & 3);
+                    this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
+                }
+            }
             offset = this.terrain(paint, new THREE.Vector3(), ro, screen, 6, 0);
             offset = this.special(paint, new THREE.Vector3(), 0, screen, offset);
             if (debug){
                 console.log('0 > end screen:', p.x, p.y);
             }
-            return true;
+            return offset;
         }
-        return false;
+        return 0;
     };
 
     Player.prototype.dump = function(){
@@ -220,9 +218,10 @@
     };
 
 
+    var keyboard = new Keyboard();
     var scene = new THREE.Scene();
     var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
-    scene.add(plane);
+//    scene.add(plane);
 
     function paint(layout, p, r, nature, type){
         "use strict";
@@ -240,7 +239,7 @@
         switch(nature){
             case 'slope':
                 [7, 2].forEach(function(vertex){
-                    boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + 0.5);
+                    boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + (0.5 * type));
                 });
                 break;
             case 'arrow':
@@ -248,6 +247,12 @@
                 break;
             case 'trampoline':
                 color = 'red';
+                break;
+            case 'water':
+                color = 'blue';
+                [1, 3, 6, 4].forEach(function(vertex){
+                    boxGeometry.vertices[vertex].setZ(+0.25);
+                });
                 break;
         }
         var boxMaterial = new THREE.MeshBasicMaterial({wireframe: true, color: color});
@@ -259,11 +264,12 @@
         scene.add(boxMesh);
     }
 
+    var i = 62, j = 64;
     var assetLoader = new AssetLoader(function(assets) {
         "use strict";
         var player = new Player(assets['brushes'].asset, assets['screens'].asset);
 //        player.screen(paint, player.start);
-        player.screen(paint, new THREE.Vector2(68, 64), 0); // 62,64: complex
+        player.screen(paint, new THREE.Vector2(i, j), 0); // 62,64: complex
         animate();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');

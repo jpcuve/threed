@@ -21,6 +21,7 @@
 <script src="js/loaders/OBJMTLLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script src="js/AssetLoader.js"></script>
+<script src="js/Keyboard.js"></script>
 <script>
     function TerrainGenerator(detail, tile) {
         this.max = Math.pow(2, detail);
@@ -96,36 +97,6 @@
             }
         }
         this.divide(size / 2, roughness);
-    };
-
-    function Keyboard(){
-        var that = this;
-        this.keys = [];
-        this.onKeyUp = function(event) {
-            var code = event.which || event.keyCode, position;
-            while ((position = that.keys.indexOf(code)) >= 0) {
-                that.keys.splice(position, 1);
-                console.log('key up', event.keyCode);
-            }
-        };
-        this.onKeyDown = function(event){
-            var code = event.which || event.keyCode;
-            if (that.keys.indexOf(code) < 0){
-                console.log('key down', event.keyCode);
-                that.keys.push(code);
-            }
-        };
-        document.addEventListener('keydown', this.onKeyDown);
-        document.addEventListener('keyup', this.onKeyUp);
-    }
-
-    Keyboard.prototype.isPressed = function(code){
-        return this.keys.indexOf(code) >= 0;
-    };
-
-    Keyboard.prototype.destroy = function(){
-        document.removeEventListener('keydown', this.onKeyDown);
-        document.removeEventListener('keyup', this.onKeyUp);
     };
 
     var keyboard = new Keyboard();
