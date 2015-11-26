@@ -193,9 +193,20 @@
     };
 
 
+    var scene = new THREE.Scene();
+    var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: true }));
+    scene.add(plane);
+
     function paint(method, p, r, nature, type){
         "use strict";
         console.log(method,'(', p.x, ',', p.y, ',', p.z, ')', r, nature, type);
+        var boxGeometry = new THREE.BoxGeometry(1, 1, 0.5);
+        var boxMaterial = new THREE.MeshBasicMaterial({wireframe: true})
+        var boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+        boxMesh.translateX(p.x - 3.5);
+        boxMesh.translateY(p.y - 3.5);
+        boxMesh.translateZ((p.z - 0.5) / 2);
+        scene.add(boxMesh);
     }
 
     var assetLoader = new AssetLoader(function(assets) {
@@ -208,9 +219,6 @@
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
     assetLoader.load();
 
-    var scene = new THREE.Scene();
-    var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: true }));
-    scene.add(plane);
 
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     var orbitControls = new THREE.OrbitControls(camera);
