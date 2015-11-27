@@ -44,7 +44,7 @@
         this.brushes = {};
         this.screens = {};
         this.layouts = ['basic', 'extruded', 'basic', 'column', 'special'];
-        this.floor = new Uint8Array(4).fill(0);
+        this.floor = new Uint8Array(65 * 2).fill(0);
         var brushCount = 0, screenCount = 0, offset, l, i, j;
         offset = 0;
         while (offset < brushData.length){
@@ -171,15 +171,17 @@
             if (debug){
                 console.log('0 > screen:', p.x, p.y);
             }
-            this.floor[0] = screen[4];
             xo = screen[5] >> 2 & 7;
             yo = screen[5] >> 5 & 7;
+            offset = 0;
+            this.floor.fill(0);
             for (x = xo; x < 8 - xo; x++){
                 for (y = yo; y < 8 - yo; y++){
-                    this.floor[1] = (y << 5) + (x << 2) + (screen[5] & 3);
-                    this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
+                    this.floor[offset++] = screen[4];
+                    this.floor[offset++] =  (y << 5) + (x << 2) + (screen[5] & 3);
                 }
             }
+            this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
             offset = this.terrain(paint, new THREE.Vector3(), ro, screen, 6, 0);
             offset = this.special(paint, new THREE.Vector3(), 0, screen, offset);
             if (debug){
@@ -226,18 +228,22 @@
                 p.setZ(0);
                 break;
         }
-        var color = 'white';
+        var color = 'red';
         switch(nature){
+            case 'block':
+                color = 'white';
+                break;
             case 'slope':
-                [7, 2].forEach(function(vertex){
+                [5, 0].forEach(function(vertex){
                     boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + (0.5 * type));
                 });
+                color = 'white';
                 break;
             case 'arrow':
                 color = 'green';
                 break;
             case 'trampoline':
-                color = 'red';
+                color = 'yellow';
                 break;
             case 'water':
                 color = 'blue';
@@ -249,13 +255,13 @@
         var boxMaterial = new THREE.MeshBasicMaterial({wireframe: true, color: color});
         var boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
         boxMesh.translateX(p.x - 3.5);
-        boxMesh.translateY(p.y - 3.5);
+        boxMesh.translateY(3.5 - p.y);
         boxMesh.translateZ(p.z / 2);
-        boxMesh.rotateZ((r % 4) * Math.PI / 2);
+        boxMesh.rotateZ(-(r % 4) * Math.PI / 2);
         scene.add(boxMesh);
     }
 
-    var i = 62, j = 64, player;
+    var i = 64, j = 64, player;
     var assetLoader = new AssetLoader(function(assets) {
         "use strict";
         player = new Player(assets['brushes'].asset, assets['screens'].asset);
