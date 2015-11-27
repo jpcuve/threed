@@ -39,11 +39,6 @@
         }
     };
 
-    THREE.Vector3.prototype.add8 = function(vector3){
-        var x = this.x, y = this.y, z = this.z;
-        this.set((x + vector3.x) % 8, (y + vector3.y) % 8, (z + vector3.z) % 8);
-    };
-
     function Player(brushData, screenData){
         "use strict";
         this.brushes = {};
@@ -91,8 +86,7 @@
                 if (debug){
                     console.log('local brush: (', p.x, ',', p.y, ',', p.z, ')r:' , r);
                 }
-                p.add8(po);
-//                p.rotz44(ro); // apply rotation
+                p.add(po);
                 if (debug){
                     console.log(level + 1, '> brush:', index);
                 }
@@ -139,7 +133,7 @@
                 if (debug){
                     console.log('local block: (', p.x, ',', p.y, ',', p.z, ')r:' , r);
                 }
-                p.add8(po);
+                p.add(po);
                 p.rotz44(ro); // apply rotation
                 paint(this.layouts[m], p, ro + r, nature, type);
             }
@@ -172,14 +166,16 @@
 
     Player.prototype.screen = function(paint, p, ro){
         "use strict";
-        var screen = this.screens[(p.y << 8) + p.x], offset, x, y;
+        var screen = this.screens[(p.y << 8) + p.x], offset, xo, yo, x, y;
         if (screen) {
             if (debug){
                 console.log('0 > screen:', p.x, p.y);
             }
             this.floor[0] = screen[4];
-            for (x = screen[5] >> 2 & 7; x < 8; x++){
-                for (y = screen[5] >> 5 & 7; y < 8; y++){
+            xo = screen[5] >> 2 & 7;
+            yo = screen[5] >> 5 & 7;
+            for (x = xo; x < 8 - xo; x++){
+                for (y = yo; y < 8 - yo; y++){
                     this.floor[1] = (y << 5) + (x << 2) + (screen[5] & 3);
                     this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
                 }
@@ -217,10 +213,6 @@
     };
 
 
-    var keyboard = new Keyboard();
-    var scene = new THREE.Scene();
-    var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
-//    scene.add(plane);
 
     function paint(layout, p, r, nature, type){
         "use strict";
@@ -263,13 +255,11 @@
         scene.add(boxMesh);
     }
 
-    var i = 62, j = 64;
+    var i = 62, j = 64, player;
     var assetLoader = new AssetLoader(function(assets) {
         "use strict";
-        var player = new Player(assets['brushes'].asset, assets['screens'].asset);
-//        player.screen(paint, player.start);
-        player.screen(paint, new THREE.Vector2(i, j), 0); // 62,64: complex
-        animate();
+        player = new Player(assets['brushes'].asset, assets['screens'].asset);
+        update();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
@@ -283,19 +273,44 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    var geometry = new THREE.BoxGeometry(1, 1, 1);
-    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    var cube = new THREE.Mesh(geometry, material);
-//    scene.add(cube);
 
     camera.position.z = 10;
+
+    var scene = new THREE.Scene();
+
+    document.onkeypress = function(evt) {
+        evt = evt || window.event;
+        var charCode = evt.keyCode || evt.which;
+        var charStr = String.fromCharCode(charCode);
+        switch(charStr){
+            case 'q':
+                i = (i - 1) & 0x7F;
+                break;
+            case 'd':
+                i = (i + 1) & 0x7F;
+                break;
+            case 'z':
+                j = (j - 1) & 0x7F;
+                break;
+            case 's':
+                j = (j + 1) & 0x7F;
+                break;
+        }
+        update();
+    };
+
+    function update(){
+        scene = new THREE.Scene();
+        var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
+        scene.add(plane);
+        player.screen(paint, new THREE.Vector2(i, j), 0);
+        requestAnimationFrame(animate);
+    }
 
     var animate = function (){
         "use strict";
         orbitControls.update();
         requestAnimationFrame(animate);
-        cube.rotation.x += 0.1;
-        cube.rotation.y += 0.1;
         renderer.render(scene, camera);
     };
 
