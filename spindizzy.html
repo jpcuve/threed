@@ -234,10 +234,12 @@
                 color = 'white';
                 break;
             case 'slope':
-                [5, 0].forEach(function(vertex){
-                    boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + (0.5 * type));
-                });
-                color = 'white';
+                if (type > 0 && type < 3){
+                    [5, 0].forEach(function(vertex){
+                        boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + (0.5 * type));
+                    });
+                    color = 'white';
+                }
                 break;
             case 'arrow':
                 color = 'green';
