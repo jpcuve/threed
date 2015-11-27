@@ -73,14 +73,21 @@
         });
     };
 
-    Piece.prototype.hollowSlope1 = function(extension){
+    Piece.prototype.convexSlope1 = function(extension){
+        var that = this;
+        [0,5,2].forEach(function(index){
+            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
+        });
+    };
+
+    Piece.prototype.concaveSlope1 = function(extension){
         var that = this;
         [0,5,7].forEach(function(index){
             that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
         });
     };
 
-    Piece.prototype.hollowSlope2 = function(extension){
+    Piece.prototype.concaveSlope2 = function(extension){
         var that = this;
         [5].forEach(function(index){
             that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
@@ -302,14 +309,32 @@
                 color = 'white';
                 break;
             case 'slope':
+                    switch(type){
+                        case 1:
+                            piece.simpleSlope(0);
+                            break;
+                        case 2:
+                            piece.simpleSlope(1);
+                            break;
+                        case 5:
+                            piece.convexSlope1(0);
+                            break;
+                        case 6:
+                            piece.concaveSlope1(0);
+                            break;
+                        case 7:
+                            piece.concaveSlope2(0);
+                            break;
+
+                    }
                     console.log("TYPE:", type);
                     if (type <= 2){
                         piece.simpleSlope(type);
                     } else if (type <= 4){
                     } else if (type <= 6){
-                        piece.hollowSlope1(1);
+                        piece.concaveSlope1(1);
                     } else {
-                        piece.hollowSlope2(1);
+                        piece.concaveSlope2(1);
                     }
                     color = 'white';
                 break;
