@@ -234,12 +234,15 @@
                 color = 'white';
                 break;
             case 'slope':
-                if (type > 0 && type < 3){
-                    [5, 0].forEach(function(vertex){
-                        boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + (0.5 * type));
-                    });
-                    color = 'white';
-                }
+                    var ar = [[5, 0], [5, 0], [5, 0], [5, 0, 7], [], [0,2,5], [5], []];
+                    if (ar[type - 1].length > 0){
+                        ar[type - 1].forEach(function(vertex){
+                            boxGeometry.vertices[vertex].setZ(boxGeometry.vertices[vertex].z + 0.5);
+                        });
+                        color = 'white';
+                    } else {
+                        console.log('***** TYPE: ', type);
+                    }
                 break;
             case 'arrow':
                 color = 'green';
