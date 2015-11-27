@@ -257,8 +257,10 @@
                 });
                 break;
         }
-        var boxMaterial = new THREE.MeshBasicMaterial({wireframe: true, color: color});
-        var boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+        var darkMaterial = new THREE.MeshBasicMaterial( { color: color } );
+       	var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
+       	var multiMaterial = [ darkMaterial, wireframeMaterial ];
+        var boxMesh = THREE.SceneUtils.createMultiMaterialObject(boxGeometry, multiMaterial);
         boxMesh.translateX(p.x - 3.5);
         boxMesh.translateY(3.5 - p.y);
         boxMesh.translateZ(p.z / 2);
@@ -280,7 +282,7 @@
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     var orbitControls = new THREE.OrbitControls(camera);
 
-    var renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
