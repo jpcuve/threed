@@ -18,7 +18,7 @@
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script src="js/AssetLoader.js"></script>
-<script src="js/Keyboard.js"></script>
+<script src="js/Spindizzy.js"></script>
 
 
 <div style="position: relative; width: 500px; height: 500px;">
@@ -30,44 +30,66 @@
 
 <script>
 
-    var debug = 1;
-
-    var basicVertices = [
-        [0.5,0.5,0.25],
-        [0.5,0.5,-0.25],
-        [0.5,-0.5,0.25],
-        [0.5,-0.5,-0.25],
-        [-0.5,0.5,-0.25],
-        [-0.5,0.5,0.25],
-        [-0.5,-0.5,-0.25],
-        [-0.5,-0.5,0.25]
-    ];
-    var basicFaces = [
-        [0,2,1],
-        [2,3,1],
-        [4,6,5],
-        [6,7,5],
-        [4,5,1],
-        [5,0,1],
-        [7,6,2],
-        [6,3,2],
-        [2,0,5],
-        [5,7,2],
-        [1,3,4],
-        [3,6,4]
-    ];
-
-    function Piece(vertices, faces){
-        var that = this;
-        this.geometry = new THREE.Geometry();
-        vertices.forEach(function(vertex){
-            that.geometry.vertices.push(new THREE.Vector3(vertex[0], vertex[1], vertex[2]));
-        });
-        faces.forEach(function(face){
-            that.geometry.faces.push(new THREE.Face3(face[0], face[1], face[2]))
-        });
+    function Piece(){
+        this.debug = true;
+        this.vertices = [
+            // top face
+            [0.5, 0.5, 0.25],       //0
+            [-0.5, 0.5, 0.25],      //1
+            [-0.5, -0.5, 0.25],     //2
+            [0.5, -0.5, 0.25],      //3
+            // bottom face
+            [0.5, 0.5, -0.25],      //4
+            [-0.5, 0.5, -0.25],     //5
+            [-0.5, -0.5, -0.25],    //6
+            [0.5, -0.5, -0.25]      //7
+        ];
+        this.faces = [
+            [0, 4, 5], [5, 1, 0],
+            [1, 5, 6], [6, 2, 1],
+            [2, 6, 7], [7, 3, 2],
+            [3, 7, 4], [4, 0, 3]
+        ];
+        this.top1 = [
+            [0, 1, 2], [2, 3, 0]
+        ];
+        this.top2 = [
+            [1, 2, 3], [3, 0, 1]
+        ]
     }
 
+    Piece.prototype.basicBlock = function(height){
+        var geometry = new THREE.BufferGeometry(), i, j, h = height || 1, vs = new Float32Array(this.vertices.length * 3), cs = new Float32Array(this.vertices.length * 3), fs = new Uint32Array((this.faces.length + this.top1.length) * 3);
+        for (i = 0; i < this.vertices.length; i++){
+            vs[i * 3] = this.vertices[i][0];
+            vs[i * 3 + 1] = this.vertices[i][1];
+            vs[i * 3 + 2] = this.vertices[i][2];
+            cs[i * 3] = 0.5;
+            cs[i * 3 + 1] = 0.5;
+            cs[i * 3 + 2] = 0.5;
+        }
+        for (i = 0; i < 4; i++){
+            vs[i * 3 + 2] *= h;
+        }
+        geometry.addAttribute('position', new THREE.BufferAttribute(vs, 3));
+        geometry.addAttribute('color', new THREE.BufferAttribute(cs, 3));
+        for (i = 0; i < this.faces.length; i++){
+            j = i * 3;
+            fs[j] = this.faces[i][0];
+            fs[j + 1] = this.faces[i][1];
+            fs[j + 2] = this.faces[i][2];
+        }
+        for (i = 0; i < this.top1.length; i++){
+            j = (this.faces.length + i) * 3;
+            fs[j] = this.top1[i][0];
+            fs[j + 1] = this.top1[i][1];
+            fs[j + 2] = this.top1[i][2];
+        }
+        geometry.setIndex(new THREE.BufferAttribute(fs, 1));
+        return geometry;
+    };
+
+/*
     Piece.prototype.addZ = function(extension){
         var that = this;
         [0,2,5,7].forEach(function(index){
@@ -102,216 +124,17 @@
             that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
         });
     };
+*/
 
-    THREE.Vector3.prototype.rotz44 = function(r){
-        "use strict";
-        var x = this.x, y = this.y, z = this.z;
-        switch(r % 4){
-            case 1:
-                this.set(7 - y, x, z);
-                break;
-            case 2:
-                this.set(7 - x, 7 - y, z);
-                break;
-            case 3:
-                this.set(y, 7 - x, z);
-                break;
-        }
-    };
-
-    function Player(brushData, screenData){
-        "use strict";
-        this.brushes = {};
-        this.screens = {};
-        this.layouts = ['basic', 'extruded', 'basic', 'column', 'special'];
-        this.floor = new Uint8Array(65 * 2).fill(0);
-        var brushCount = 0, screenCount = 0, offset, l, i, j;
-        offset = 0;
-        while (offset < brushData.length){
-            l = brushData[offset + 1];
-            var brushId = brushData[offset];
-            console.log('brush id:' + brushId);
-            this.brushes[brushId] = brushData.slice(offset, offset + l);
-            offset += l;
-            brushCount++;
-        }
-        if (debug){
-            console.log('brush count:', brushCount);
-        }
-        offset = 0;
-        while (offset < screenData.length){
-            l = screenData[offset];
-            j = screenData[offset + 1];
-            i = screenData[offset + 2];
-            if ((i & 0x80) !== 0){
-                i -= 0x80;
-                this.start = new THREE.Vector2(i, j);
-            }
-            this.screens[(j << 8) + i] = screenData.slice(offset, offset + l);
-            offset += l;
-            screenCount++;
-        }
-        if (debug){
-            console.log('screen count:', screenCount);
-        }
-    }
-
-    Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
-        "use strict";
-        var l, p, r, nature, type;
-        while ((l = buffer[offset] + (buffer[offset + 1] << 8)) != 0){
-            p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-            var f = l & 0x7F, m = f >> 5, t = f >> 2 & 7;
-            if ((f & 0x1F) === 2) { // brush
-                var index = buffer[offset + 2], brush = this.brushes[index];
-                r = (l >> 5) & 3;
-                if (debug){
-                    console.log('local brush: (', p.x, ',', p.y, ',', p.z, ')r:' , r);
-                }
-                p.add(po);
-                if (debug){
-                    console.log(level + 1, '> brush:', index);
-                }
-                this.terrain(paint, p, ro + r, brush, 2, level + 1);
-                if (debug){
-                    console.log(level + 1, '> end brush:', index);
-                }
-                offset++;
-            } else {
-                r = 0;
-                nature = 'undefined';
-                type = 0;
-                switch(f){
-                    case 1:
-                    case 0x21:
-                    case 0x61:
-                        nature = 'block';
-                        break;
-                    case 3:
-                    case 0x23:
-                    case 0x63:
-                        nature = 'trampoline';
-                        break;
-                    case 0x40:
-                        nature = 'water';
-                        break;
-                    case 0x43:
-                        nature = 'ice';
-                        break;
-                    default:
-                        if ((f & 0x70) === 0x50){
-                            nature = 'clue';
-                            type = f & 0xF;
-                        } else if ((f & 0x7C) === 0x44){
-                            nature = 'arrow';
-                            r = f & 3;
-                        } else {
-                            nature = 'slope';
-                            type = t;
-                            if (t < 1){
-                                console.log('invalid slope type, f=', f);
-                            }
-                            r = f & 3;
-                        }
-                        break;
-                }
-                if (debug){
-                    console.log('local block: (', p.x, ',', p.y, ',', p.z, ')r:' , r);
-                }
-                p.add(po);
-                p.rotz44(ro); // apply rotation
-                paint(this.layouts[m], p, ro + r, nature, type);
-            }
-            offset += 2;
-        }
-        return offset + 2;
-    };
-
-    Player.prototype.special = function(paint, po, ro, buffer, offset){
-        "use strict";
-        var l, p, nature;
-        while (buffer[offset] != 0){
-            l = buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16);
-            p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
-            nature = 'undefined';
-            if ((l & 0x7F) === 1){
-                nature = 'jewel';
-            } else if ((l & 0x7) === 2){
-                nature = 'lift';
-            } else if ((l & 0x77) === 3){
-                nature = 'enemy';
-            } else if ((l & 4) === 4){
-                nature = 'puzzle';
-            }
-            paint(this.layouts[4], new THREE.Vector3().addVectors(po, p), ro, nature, l);
-            offset += 3;
-        }
-        return offset;
-    };
-
-    Player.prototype.screen = function(paint, p, ro){
-        "use strict";
-        var screen = this.screens[(p.y << 8) + p.x], offset, xo, yo, x, y;
-        if (screen) {
-            if (debug){
-                console.log('0 > screen:', p.x, p.y);
-            }
-            if (screen[4]){
-                xo = screen[5] >> 2 & 7;
-                yo = screen[5] >> 5 & 7;
-                offset = 0;
-                this.floor.fill(0);
-                for (x = xo; x < 8 - xo; x++){
-                    for (y = yo; y < 8 - yo; y++){
-                        this.floor[offset] = screen[4];
-                        this.floor[offset + 1] =  (y << 5) + (x << 2) + (screen[5] & 3);
-                        offset += 2;
-                    }
-                }
-                this.terrain(paint, new THREE.Vector3(), 0, this.floor, 0, 0);
-            }
-            offset = this.terrain(paint, new THREE.Vector3(), ro, screen, 6, 0);
-            offset = this.special(paint, new THREE.Vector3(), 0, screen, offset);
-            if (debug){
-                console.log('0 > end screen:', p.x, p.y);
-            }
-            return offset;
-        }
-        return 0;
-    };
-
-    Player.prototype.dump = function(){
-        "use strict";
-        var x, y, ar;
-        for (y = 40; y < 80; y++){
-            if (y % 10 == 0){
-                console.log("-");
-            }
-            ar = [];
-            for (x = 40; x < 90; x++) {
-                if (x % 10 == 0) {
-                    ar.push(" ");
-                }
-                if (this.screen(paint, x, y)) {
-                    ar.push("*");
-                } else {
-                    ar.push(".");
-                }
-            }
-            console.log(ar.join(""));
-        }
-    };
-
-
+    var piece = new Piece();
 
     function paint(layout, p, r, nature, type){
         "use strict";
         console.log('*', layout,'(', p.x, ',', p.y, ',', p.z, ')r:', r, nature, type);
-        var piece = new Piece(basicVertices, basicFaces);
+        var geometry = piece.basicBlock();
         switch(layout){
             case 'column':
-                piece.addZ(p.z);
-                p.setZ(0);
+                geometry = piece.basicBlock(p.z);
                 break;
         }
         var color = 'red';
@@ -322,30 +145,30 @@
             case 'slope':
                     switch(type){
                         case 1:
-                            piece.simpleSlope(0);
+//                            piece.simpleSlope(0);
                             break;
                         case 2:
-                            piece.simpleSlope(1);
+//                            piece.simpleSlope(1);
                             break;
                         case 5:
-                            piece.convexSlope1(0);
+//                            piece.convexSlope1(0);
                             break;
                         case 6:
-                            piece.concaveSlope1(0);
+//                            piece.concaveSlope1(0);
                             break;
                         case 7:
-                            piece.concaveSlope2(0);
+//                            piece.concaveSlope2(0);
                             break;
 
                     }
                     console.log("TYPE:", type);
                     if (type <= 2){
-                        piece.simpleSlope(type);
+//                        piece.simpleSlope(type);
                     } else if (type <= 4){
                     } else if (type <= 6){
-                        piece.concaveSlope1(1);
+//                        piece.concaveSlope1(1);
                     } else {
-                        piece.concaveSlope2(1);
+//                        piece.concaveSlope2(1);
                     }
                     color = 'white';
                 break;
@@ -357,13 +180,13 @@
                 break;
             case 'water':
                 color = 'blue';
-                piece.addZ(-1);
+//                piece.addZ(-1);
                 break;
         }
         var darkMaterial = new THREE.MeshBasicMaterial( { color: color } );
        	var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
        	var multiMaterial = [ darkMaterial, wireframeMaterial ];
-        var boxMesh = THREE.SceneUtils.createMultiMaterialObject(piece.geometry, multiMaterial);
+        var boxMesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
         boxMesh.translateX(p.x - 3.5);
         boxMesh.translateY(3.5 - p.y);
         boxMesh.translateZ(p.z / 2);
@@ -371,7 +194,7 @@
         scene.add(boxMesh);
     }
 
-    var i = 61, j = 56, player;
+    var i = 64, j = 64, player;
     var assetLoader = new AssetLoader(function(assets) {
         "use strict";
         player = new Player(assets['brushes'].asset, assets['screens'].asset);
