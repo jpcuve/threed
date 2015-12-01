@@ -129,7 +129,12 @@
         offset = 0;
         while (offset < brushData.length){
             l = brushData[offset + 1];
-            this.brushes[brushData[offset]] = brushData.slice(offset, offset + l);
+            var brushId = brushData[offset];
+            console.log('brush id:' + brushId);
+            this.brushes[brushId] = brushData.slice(offset, offset + l);
+            if (brushData[offset + l - 1] !== 0 || brushData[offset + l - 2] !== 0){
+                console.log('invalid brush termination for id:', brushId);
+            }
             offset += l;
             brushCount++;
         }
