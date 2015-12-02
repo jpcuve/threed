@@ -79,11 +79,12 @@
             fs[j + 1] = this.faces[i][1];
             fs[j + 2] = this.faces[i][2];
         }
-        for (i = 0; i < this.top1.length; i++){
+        var top = this.top1;
+        for (i = 0; i < top.length; i++){
             j = (this.faces.length + i) * 3;
-            fs[j] = this.top1[i][0];
-            fs[j + 1] = this.top1[i][1];
-            fs[j + 2] = this.top1[i][2];
+            fs[j] = top[i][0];
+            fs[j + 1] = top[i][1];
+            fs[j + 2] = top[i][2];
         }
         geometry.setIndex(new THREE.BufferAttribute(fs, 1));
         return geometry;
