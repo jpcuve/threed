@@ -90,47 +90,54 @@
         return geometry;
     };
 
-/*
-    Piece.prototype.addZ = function(extension){
-        var that = this;
-        [0,2,5,7].forEach(function(index){
-            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
-        });
-    };
-
-    Piece.prototype.simpleSlope = function(extension){
-        var that = this;
-        [0,5].forEach(function(index){
-            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
-        });
-    };
-
-    Piece.prototype.convexSlope1 = function(extension){
-        var that = this;
-        [0,5,2].forEach(function(index){
-            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
-        });
-    };
-
-    Piece.prototype.concaveSlope1 = function(extension){
-        var that = this;
-        [0,5,7].forEach(function(index){
-            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
-        });
-    };
-
-    Piece.prototype.concaveSlope2 = function(extension){
-        var that = this;
-        [5].forEach(function(index){
-            that.geometry.vertices[index].setZ(that.geometry.vertices[index].z + extension * 0.5);
-        });
-    };
-*/
-
     var piece = new Piece();
+
+    function Board(){
+        this.columns = [
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []],
+            [[], [], [],[], [], [], [], []]
+        ];
+    }
+
+    Board.prototype.play = function(layout, p, r, nature, type){
+        "use strict";
+        var column = this.columns[p.x][p.y], z, h;
+        switch(layout){
+            case 'column':
+            case 'extrude':
+                z = 0;
+                h = p.z;
+                break;
+            default:
+                z = p.z;
+                h = 0;
+                break;
+        }
+        column.push({z: z, h: h, r: r, nature: nature, type: type});
+    };
+
+    Board.prototype.processColumn = function(x, y){
+        "use strict";
+        var column = this.columns[x][y], busy = [], i;
+        // phase 1: only keep pieces that do not overlap (busy contains the indexes of the pieces in each column that must be displayed)
+
+        // phase 2: merge contiguous blocks
+        // phase 3: return array of blocks as objects with z-low, z-hi, type, rotation (that must be post processed)
+
+    };
+
+    var board = new Board();
+
 
     function paint(layout, p, r, nature, type){
         "use strict";
+        board.play(layout, p, r, nature, type);
         console.log('*', layout,'(', p.x, ',', p.y, ',', p.z, ')r:', r, nature, type);
         var geometry = piece.basicBlock();
         switch(layout){
