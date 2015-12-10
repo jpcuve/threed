@@ -30,69 +30,9 @@
 
 <script>
 
-    function Piece(){
-        this.debug = true;
-        this.vertices = [
-            // top face
-            [0.5, 0.5, 0.25],       //0
-            [-0.5, 0.5, 0.25],      //1
-            [-0.5, -0.5, 0.25],     //2
-            [0.5, -0.5, 0.25],      //3
-            // bottom face
-            [0.5, 0.5, -0.25],      //4
-            [-0.5, 0.5, -0.25],     //5
-            [-0.5, -0.5, -0.25],    //6
-            [0.5, -0.5, -0.25]      //7
-        ];
-        this.faces = [
-            [0, 4, 5], [5, 1, 0],
-            [1, 5, 6], [6, 2, 1],
-            [2, 6, 7], [7, 3, 2],
-            [3, 7, 4], [4, 0, 3]
-        ];
-        this.top1 = [
-            [0, 1, 2], [2, 3, 0]
-        ];
-        this.top2 = [
-            [1, 2, 3], [3, 0, 1]
-        ]
-    }
-
-    Piece.prototype.basicBlock = function(height){
-        var geometry = new THREE.BufferGeometry(), i, j, h = height || 1, vs = new Float32Array(this.vertices.length * 3), cs = new Float32Array(this.vertices.length * 3), fs = new Uint32Array((this.faces.length + this.top1.length) * 3);
-        for (i = 0; i < this.vertices.length; i++){
-            vs[i * 3] = this.vertices[i][0];
-            vs[i * 3 + 1] = this.vertices[i][1];
-            vs[i * 3 + 2] = this.vertices[i][2];
-            cs[i * 3] = 0.5;
-            cs[i * 3 + 1] = 0.5;
-            cs[i * 3 + 2] = 0.5;
-        }
-        for (i = 0; i < 4; i++){
-            vs[i * 3 + 2] *= h;
-        }
-        geometry.addAttribute('position', new THREE.BufferAttribute(vs, 3));
-        geometry.addAttribute('color', new THREE.BufferAttribute(cs, 3));
-        for (i = 0; i < this.faces.length; i++){
-            j = i * 3;
-            fs[j] = this.faces[i][0];
-            fs[j + 1] = this.faces[i][1];
-            fs[j + 2] = this.faces[i][2];
-        }
-        var top = this.top1;
-        for (i = 0; i < top.length; i++){
-            j = (this.faces.length + i) * 3;
-            fs[j] = top[i][0];
-            fs[j + 1] = top[i][1];
-            fs[j + 2] = top[i][2];
-        }
-        geometry.setIndex(new THREE.BufferAttribute(fs, 1));
-        return geometry;
-    };
-
-    var piece = new Piece();
-
     function Board(){
+        var x, y, z;
+        // each column contains type & rotation, starting from height 0
         this.columns = [
             [[], [], [],[], [], [], [], []],
             [[], [], [],[], [], [], [], []],
@@ -103,33 +43,102 @@
             [[], [], [],[], [], [], [], []],
             [[], [], [],[], [], [], [], []]
         ];
+        this.helpGeometry = new THREE.Geometry();
+        this.boardGeometry = new THREE.Geometry();
+        for (x = 0; x <= 8; x++){
+            for (y = 0; y <= 8; y++){
+                for (z = 0; z <= 8; z++){
+                    this.helpGeometry.vertices.push(new THREE.Vector3(x, y, z * 0.5));
+                    this.boardGeometry.vertices.push(new THREE.Vector3(x, y, z * 0.5));
+                }
+            }
+        }
     }
+
+    Board.prototype.vertexAt = function(x, y, z){
+        return x * 81 + y * 9 + z;
+    };
+
+    Board.contours = {
+        none: {
+            height: [0, 0, 0, 0]
+        },
+        basic: {
+            height: [1, 1, 1, 1]
+        },
+        gentleSlope: {
+            height: [0, 0, 1, 1]
+        },
+        normalSlope: {
+            height: [0, 0, 2, 2]
+        },
+        hardSlope: {
+            height: [0, 0, 3, 3]
+        }
+    };
+
+    Board.tops = {
+        plain: {
+
+        },
+        trampoline: {
+
+        },
+        water: {
+
+        },
+        ice: {
+
+        },
+        arrow: {
+
+        }
+    };
 
     Board.prototype.play = function(layout, p, r, nature, type){
         "use strict";
         var column = this.columns[p.x][p.y], z, h;
         switch(layout){
-            case 'column':
-            case 'extrude':
-                z = 0;
+            case 'basic':
                 h = p.z;
                 break;
-            default:
-                z = p.z;
-                h = 0;
+            case 'column':
+                for (h = 0; h < p.z; h++){
+                    column[h] = {contour: Board.contours.basic};
+                }
+                break;
+            case 'extrude':
+                    // do not know what to do
+                break;
+            case 'special':
+                    // later
                 break;
         }
-        column.push({z: z, h: h, r: r, nature: nature, type: type});
+        switch(nature){
+            case 'block':
+                column[h] = {contour: Board.contours.basic, top: Board.tops.plain};
+                break;
+            case 'trampoline':
+                column[h] = {contour: Board.contours.basic, top: Board.tops.trampoline};
+                break;
+            case 'water':
+                column[h] = {contour: Board.contours.basic, top: Board.tops.water};
+                break;
+            case 'ice':
+                column[h] = {contour: Board.contours.basic, top: Board.tops.ice};
+                break;
+            case 'arrow':
+                column[h] = {contour: Board.contours.basic, top: Board.tops.arrow, rotation: r % 4};
+                break;
+            case 'slope':
+                column[h] = {contour: Board.contours.hardSlope, top: Board.tops.arrow, rotation: r % 4};
+                break;
+        }
     };
 
-    Board.prototype.processColumn = function(x, y){
-        "use strict";
-        var column = this.columns[x][y], busy = [], i;
-        // phase 1: only keep pieces that do not overlap (busy contains the indexes of the pieces in each column that must be displayed)
-
-        // phase 2: merge contiguous blocks
-        // phase 3: return array of blocks as objects with z-low, z-hi, type, rotation (that must be post processed)
-
+    Board.prototype.compute = function(){
+        this.boardGeometry.faces = [];
+        this.boardGeometry.faces.push(new THREE.Face3(0, 245, 612));
     };
 
     var board = new Board();
@@ -139,6 +148,7 @@
         "use strict";
         board.play(layout, p, r, nature, type);
         console.log('*', layout,'(', p.x, ',', p.y, ',', p.z, ')r:', r, nature, type);
+        /*
         var geometry = piece.basicBlock();
         switch(layout){
             case 'column':
@@ -200,6 +210,7 @@
         boxMesh.translateZ(p.z / 2);
         boxMesh.rotateZ(-(r % 4) * Math.PI / 2);
         scene.add(boxMesh);
+*/
     }
 
     var i = 64, j = 64, player;
@@ -251,6 +262,10 @@
         var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
 //        scene.add(plane);
         player.screen(paint, new THREE.Vector2(i, j), 0);
+        scene.add(new THREE.Points(board.helpGeometry, new THREE.PointsMaterial({size: 0.1})));
+        board.compute();
+        var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888}));
+        scene.add(boardMesh);
         document.getElementById('screenPosition').innerHTML = 'screen: ' + i + ',' + j; // problem at 61,56
         requestAnimationFrame(animate);
     }
