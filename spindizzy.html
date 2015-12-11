@@ -21,7 +21,7 @@
 <script src="js/Spindizzy.js"></script>
 
 
-<div style="position: relative; width: 500px; height: 500px;">
+<div style="position: relative; width: 1000px; height: 1000px;">
     <canvas id="canvas" style="position: relative; width: 100%; height: 100%;"></canvas>
     <div id="hud" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 1000; color: red;">
         <span id="screenPosition"/>
@@ -213,14 +213,16 @@
 */
     }
 
-    var i = 64, j = 64, player;
+    var i = 64, j = 64, player, texture;
     var assetLoader = new AssetLoader(function(assets) {
         "use strict";
         player = new Player(assets['brushes'].asset, assets['screens'].asset);
-        update();
+        texture = assets['spindizzy_texture'].asset;
+        init();
     });
     assetLoader.add('brushes', 'binary', 'assets/models/spindizzy_brushes.bin');
     assetLoader.add('screens', 'binary', 'assets/models/spindizzy_screens.bin');
+    assetLoader.add('spindizzy_texture', 'texture', 'assets/textures/spindizzy_texture.png');
     assetLoader.load();
 
 
@@ -257,6 +259,17 @@
         update();
     };
 
+    // returns 3 Vector2 coordinates in the texture for the down/up triangle in the spindizzy_texture
+    function textureUV(offset, up){
+        var f = 16 / 512, x0 = offset * f, x1 = x0 + f,  v = [new THREE.Vector2(x0, 0), new THREE.Vector2(x1, 0), new THREE.Vector2(x1, 1), new THREE.Vector2(x0, 1)];
+        return up ? [v[1], v[2], v[3]] : [v[0], v[1], v[3]];
+    }
+
+    function init(){
+
+        update();
+    }
+
     function update(){
         scene = new THREE.Scene();
         var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
@@ -264,8 +277,12 @@
         player.screen(paint, new THREE.Vector2(i, j), 0);
         scene.add(new THREE.Points(board.helpGeometry, new THREE.PointsMaterial({size: 0.1})));
         board.compute();
-        var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888}));
+        board.boardGeometry.faceVertexUvs[0] = [];
+        board.boardGeometry.faceVertexUvs[0].push(textureUV(15, true));
+        var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888, map: texture}));
         scene.add(boardMesh);
+        var axisHelper = new THREE.AxisHelper(10);
+        scene.add(axisHelper);
         document.getElementById('screenPosition').innerHTML = 'screen: ' + i + ',' + j; // problem at 61,56
         requestAnimationFrame(animate);
     }
