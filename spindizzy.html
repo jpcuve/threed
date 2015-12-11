@@ -67,13 +67,16 @@
             height: [1, 1, 1, 1]
         },
         gentleSlope: {
-            height: [0, 0, 1, 1]
+            height: [2, 2, 1, 1]
         },
         normalSlope: {
-            height: [0, 0, 2, 2]
+            height: [3, 3, 1, 1]
         },
         hardSlope: {
-            height: [0, 0, 3, 3]
+            height: [4, 4, 1, 1]
+        },
+        unidentified: {
+            height: [0.5, -0.5, 0.5, -0.5]
         }
     };
 
@@ -132,7 +135,7 @@
                 column[h] = {contour: Board.contours.basic, top: Board.tops.arrow, rotation: r % 4};
                 break;
             case 'slope':
-                column[h] = {contour: Board.contours.hardSlope, top: Board.tops.arrow, rotation: r % 4};
+                column[h] = {contour: Board.contours.gentleSlope, top: Board.tops.arrow, rotation: r % 4};
                 break;
         }
     };
@@ -147,16 +150,21 @@
                     block = this.columns[x][y][z];
                     if (block){
                         console.log('block: (', x, ',', y, ',', z, ') ', JSON.stringify(block));
-                        h = block.contour.height;
-                        f = [this.vertexAt(x, y, z), this.vertexAt(x + 1, y, z), this.vertexAt(x + 1, y + 1, z), this.vertexAt(x, y + 1, z)];
-                        c = [this.vertexAt(x, y, z + h[0]), this.vertexAt(x + 1, y, z + h[1]), this.vertexAt(x + 1, y + 1, z + h[2]), this.vertexAt(x, y + 1, z + h[3])];
-                        // apply rotation
+                        h = block.contour.height.slice();
                         if (block.rotation){
                             for (r = 0; r < block.rotation; r++){
-                                f.unshift(f.pop());
-                                c.unshift(c.pop());
+//                                h.push(h.shift());
+                                h.unshift(h.pop());
                             }
-
+                        }
+                        f = [this.vertexAt(x, y, z), this.vertexAt(x + 1, y, z), this.vertexAt(x + 1, y + 1, z), this.vertexAt(x, y + 1, z)];
+                        c = [this.vertexAt(x, y, z + h[0]), this.vertexAt(x + 1, y, z + h[1]), this.vertexAt(x + 1, y + 1, z + h[2]), this.vertexAt(x, y + 1, z + h[3])];
+                        // apply texture rotation
+                        if (block.rotation){
+                            for (r = 0; r < block.rotation; r++){
+                             f.push(f.shift());
+                             c.push(c.shift());
+                            }
                         }
                         // face y = 0
                         this.boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
@@ -328,15 +336,16 @@
         var plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(8, 8, 8, 8), new THREE.MeshBasicMaterial({ wireframe: false, color: 'lightgray', transparent: true, opacity: 0.8 }));
 //        scene.add(plane);
         player.screen(paint, new THREE.Vector2(i, j), 0);
-        scene.add(new THREE.Points(board.helpGeometry, new THREE.PointsMaterial({size: 0.1})));
+//        scene.add(new THREE.Points(board.helpGeometry, new THREE.PointsMaterial({size: 0.1})));
         board.compute();
+/*
         var square = [board.vertexAt(0, 0, 8), board.vertexAt(1, 0, 8), board.vertexAt(1, 1, 8), board.vertexAt(0, 1, 8)];
         board.boardGeometry.faces.push(new THREE.Face3(square[0], square[1], square[3]));
         board.boardGeometry.faces.push(new THREE.Face3(square[1], square[2], square[3]));
         board.boardGeometry.faceVertexUvs[0] = [];
         board.boardGeometry.faceVertexUvs[0].push(textureUV(15, false));
         board.boardGeometry.faceVertexUvs[0].push(textureUV(15, true));
-        board.compute();
+*/
         var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888, map: texture}));
         scene.add(boardMesh);
         var axisHelper = new THREE.AxisHelper(10);
