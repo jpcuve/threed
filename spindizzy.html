@@ -138,7 +138,6 @@
 
     Board.prototype.compute = function(){
         this.boardGeometry.faces = [];
-        this.boardGeometry.faces.push(new THREE.Face3(0, 245, 612));
     };
 
     var board = new Board();
@@ -277,7 +276,11 @@
         player.screen(paint, new THREE.Vector2(i, j), 0);
         scene.add(new THREE.Points(board.helpGeometry, new THREE.PointsMaterial({size: 0.1})));
         board.compute();
+        var square = [board.vertexAt(0, 0, 8), board.vertexAt(1, 0, 8), board.vertexAt(1, 1, 8), board.vertexAt(0, 1, 8)];
+        board.boardGeometry.faces.push(new THREE.Face3(square[0], square[1], square[3]));
+        board.boardGeometry.faces.push(new THREE.Face3(square[1], square[2], square[3]));
         board.boardGeometry.faceVertexUvs[0] = [];
+        board.boardGeometry.faceVertexUvs[0].push(textureUV(15, false));
         board.boardGeometry.faceVertexUvs[0].push(textureUV(15, true));
         var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888, map: texture}));
         scene.add(boardMesh);
