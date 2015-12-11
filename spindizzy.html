@@ -79,19 +79,20 @@
 
     Board.tops = {
         plain: {
-
+            texture: 2
         },
         trampoline: {
-
+            texture: 1
         },
         water: {
-
+            texture: 11
         },
         ice: {
+            texture: 19
 
         },
         arrow: {
-
+            texture: 15
         }
     };
 
@@ -137,7 +138,52 @@
     };
 
     Board.prototype.compute = function(){
+        var x, y, z, block, f, c, h;
         this.boardGeometry.faces = [];
+        this.boardGeometry.faceVertexUvs[0] = [];
+        for (x = 0; x < 8; x++){
+            for (y = 0; y < 8; y++){
+                for (z = 0; z < 8; z++){
+                    block = this.columns[x][y][z];
+                    if (block){
+                        console.log('block: (', x, ',', y, ',', z, ') ', JSON.stringify(block));
+                        h = block.contour.height;
+                        f = [this.vertexAt(x, y, z), this.vertexAt(x + 1, y, z), this.vertexAt(x + 1, y + 1, z), this.vertexAt(x, y + 1, z)];
+                        c = [this.vertexAt(x, y, z + h[0]), this.vertexAt(x + 1, y, z + h[1]), this.vertexAt(x + 1, y + 1, z + h[2]), this.vertexAt(x, y + 1, z + h[3])];
+                        // face y = 0
+                        this.boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
+                        this.boardGeometry.faces.push(new THREE.Face3(f[1], c[1], c[0]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        // face x = 0
+                        this.boardGeometry.faces.push(new THREE.Face3(f[3], f[0], c[3]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
+                        this.boardGeometry.faces.push(new THREE.Face3(f[0], c[0], c[3]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        // face y = 1
+                        this.boardGeometry.faces.push(new THREE.Face3(f[2], f[3], c[2]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
+                        this.boardGeometry.faces.push(new THREE.Face3(f[3], c[3], c[2]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        // face x = 1
+                        this.boardGeometry.faces.push(new THREE.Face3(f[1], f[2], c[1]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
+                        this.boardGeometry.faces.push(new THREE.Face3(f[2], c[2], c[1]));
+                        this.boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        // top
+
+                        if (block.top){
+                            this.boardGeometry.faces.push(new THREE.Face3(c[0], c[1], c[3]));
+                            this.boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, false));
+                            this.boardGeometry.faces.push(new THREE.Face3(c[1], c[2], c[3]));
+                            this.boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, true));
+                        }
+
+                    }
+                }
+            }
+        }
+
     };
 
     var board = new Board();
@@ -282,6 +328,7 @@
         board.boardGeometry.faceVertexUvs[0] = [];
         board.boardGeometry.faceVertexUvs[0].push(textureUV(15, false));
         board.boardGeometry.faceVertexUvs[0].push(textureUV(15, true));
+        board.compute();
         var boardMesh = new THREE.Mesh(board.boardGeometry, new THREE.MeshBasicMaterial({color: 0x888888, map: texture}));
         scene.add(boardMesh);
         var axisHelper = new THREE.AxisHelper(10);
