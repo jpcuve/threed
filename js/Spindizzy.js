@@ -109,7 +109,7 @@ Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
                         nature = 'slope';
                         type = t;
                         if (t < 1){
-                            throw 'invalid slope type, f=' + f;
+                            console.log('invalid slope type, f=', f);
                         }
                         r = f & 3;
                     }
