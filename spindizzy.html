@@ -158,14 +158,17 @@
                     if (block){
                         console.log('block: (', x, ',', y, ',', z, ') ', JSON.stringify(block));
                         h = block.contour.height.slice();
+                        r = (block.rotation || 0) % 4;
 
+/*
                         if (block.rotation){
                             for (r = 0; r < block.rotation; r++){
                                 h.unshift(h.pop());
                             }
                         }
+*/
                         f = [this.vertexAt(x, y, z), this.vertexAt(x + 1, y, z), this.vertexAt(x + 1, y + 1, z), this.vertexAt(x, y + 1, z)];
-                        c = [this.vertexAt(x, y, z + h[0]), this.vertexAt(x + 1, y, z + h[1]), this.vertexAt(x + 1, y + 1, z + h[2]), this.vertexAt(x, y + 1, z + h[3])];
+                        c = [this.vertexAt(x, y, z + h[(4 - r) % 4]), this.vertexAt(x + 1, y, z + h[(5 - r) % 4]), this.vertexAt(x + 1, y + 1, z + h[(6 - r) % 4]), this.vertexAt(x, y + 1, z + h[(7 - r) % 4])];
                         // apply texture rotation
                         if (block.rotation){
                             for (r = 0; r < block.rotation; r++){
