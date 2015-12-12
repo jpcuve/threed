@@ -57,13 +57,13 @@
             height: [1, 1, 1, 1]
         },
         gentleSlope: {
-            height: [2, 2, 1, 1]
+            height: [1, 1, 2, 2]
         },
         normalSlope: {
-            height: [3, 3, 1, 1]
+            height: [1, 1, 3, 3]
         },
         hardSlope: {
-            height: [4, 4, 1, 1]
+            height: [1, 1, 4, 4]
         },
         unidentified: {
             height: [0.5, -0.5, 0.5, -0.5]
@@ -143,7 +143,7 @@
     };
 
     Board.prototype.compute = function(){
-        var x, y, z, block, f, c, h, r, boardGeometry = new THREE.Geometry();
+        var x, y, z, block, f, c, h, r, i, boardGeometry = new THREE.Geometry();
         for (x = 0; x <= 8; x++){
             for (y = 0; y <= 8; y++){
                 for (z = 0; z <= 8; z++){
@@ -158,23 +158,13 @@
                     if (block){
                         console.log('block: (', x, ',', y, ',', z, ') ', JSON.stringify(block));
                         h = block.contour.height.slice();
-                        r = (block.rotation || 0) % 4;
-
-/*
-                        if (block.rotation){
-                            for (r = 0; r < block.rotation; r++){
-                                h.unshift(h.pop());
-                            }
-                        }
-*/
+                        r = block.rotation || 0;
                         f = [this.vertexAt(x, y, z), this.vertexAt(x + 1, y, z), this.vertexAt(x + 1, y + 1, z), this.vertexAt(x, y + 1, z)];
-                        c = [this.vertexAt(x, y, z + h[(4 - r) % 4]), this.vertexAt(x + 1, y, z + h[(5 - r) % 4]), this.vertexAt(x + 1, y + 1, z + h[(6 - r) % 4]), this.vertexAt(x, y + 1, z + h[(7 - r) % 4])];
+                        c = [this.vertexAt(x, y, z + h[(r + 3) % 4]), this.vertexAt(x + 1, y, z + h[(r + 2) % 4]), this.vertexAt(x + 1, y + 1, z + h[(r + 1) % 4]), this.vertexAt(x, y + 1, z + h[r % 4])];
                         // apply texture rotation
-                        if (block.rotation){
-                            for (r = 0; r < block.rotation; r++){
-                             f.push(f.shift());
-                             c.push(c.shift());
-                            }
+                        for (i = 0; i < r; i++){
+                            f.push(f.shift());
+                            c.push(c.shift());
                         }
                         // face y = 0
                         boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
