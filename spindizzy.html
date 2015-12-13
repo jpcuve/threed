@@ -51,7 +51,7 @@
 
     Board.contours = {
         none: {
-            height: [0, 0, 0, 0],
+            height: [0, 0, 0, 0]
         },
         basic: {
             height: [1, 1, 1, 1]
@@ -80,23 +80,18 @@
         }
     };
 
-    Board.slopes = [
-        Board.contours.unidentified,
-        Board.contours.gentleSlope,
-        Board.contours.normalSlope,
-        Board.contours.break3,
-        Board.contours.unidentified,
-        Board.contours.unidentified,
-        Board.contours.break1,
-        Board.contours.break2
-    ];
-
     Board.tops = {
         one: {
             texture: 0
         },
         plain: {
             texture: 2
+        },
+        cross1: {
+            texture: 4
+        },
+        cross2: {
+            texture: 5
         },
         trampoline: {
             texture: 1
@@ -109,7 +104,7 @@
 
         },
         arrow: {
-            texture: 15
+            texture: 17
         }
     };
 
@@ -126,7 +121,7 @@
     };
 
     Board.prototype.play = function(layout, p, r, nature, type){
-        "use strict";
+        'use strict';
         var column = this.columns[p.x][7 - p.y], z, h;
         switch(layout){
             case 'basic':
@@ -164,7 +159,29 @@
                 column[h] = {contour: Board.contours.basic, top: Board.tops.arrow, rotation: r % 4};
                 break;
             case 'slope':
-                column[h] = {contour: Board.slopes[type], top: Board.tops.arrow, rotation: r % 4};
+                    switch(type){
+                        case 0:
+                            column[h] = null;
+                            break;
+                        case 1:
+                            column[h] = {contour: Board.contours.gentleSlope, top: Board.tops.plain, rotation: r % 4};
+                            break;
+                        case 2:
+                            column[h] = {contour: Board.contours.normalSlope, top: Board.tops.plain, rotation: r % 4};
+                            break;
+                        case 3:
+                            column[h] = {contour: Board.contours.break3, top: Board.tops.cross1, rotation: r % 4};
+                            break;
+                        case 6:
+                            column[h] = {contour: Board.contours.break1, top: Board.tops.cross1, rotation: r % 4};
+                            break;
+                        case 7:
+                            column[h] = {contour: Board.contours.break2, top: Board.tops.cross1, rotation: r % 4};
+                            break;
+                        default:
+                            column[h] = {contour: Board.contours.unidentified};
+                            break;
+                    }
                 break;
         }
     };
@@ -194,10 +211,14 @@
                             c.unshift(c.pop());
                         }
                         // face y = 0
-                        boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
-                        boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
-                        boardGeometry.faces.push(new THREE.Face3(f[1], c[1], c[0]));
-                        boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        if (c[0] > f[0]){
+                            boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
+                        }
+                        if (c[1] > f[1]){
+                            boardGeometry.faces.push(new THREE.Face3(f[1], c[1], c[0]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(3, true));
+                        }
                         // face x = 0
                         boardGeometry.faces.push(new THREE.Face3(f[3], f[0], c[3]));
                         boardGeometry.faceVertexUvs[0].push(textureUV(3, false));
@@ -241,77 +262,14 @@
 
 
     function paint(layout, p, r, nature, type){
-        "use strict";
+        'use strict';
         board.play(layout, p, r, nature, type);
         console.log('*', layout,'(', p.x, ',', p.y, ',', p.z, ')r:', r, nature, type);
-        /*
-        var geometry = piece.basicBlock();
-        switch(layout){
-            case 'column':
-                geometry = piece.basicBlock(p.z);
-                break;
-        }
-        var color = 'red';
-        switch(nature){
-            case 'block':
-                color = 'white';
-                break;
-            case 'slope':
-                    switch(type){
-                        case 1:
-//                            piece.simpleSlope(0);
-                            break;
-                        case 2:
-//                            piece.simpleSlope(1);
-                            break;
-                        case 5:
-//                            piece.convexSlope1(0);
-                            break;
-                        case 6:
-//                            piece.concaveSlope1(0);
-                            break;
-                        case 7:
-//                            piece.concaveSlope2(0);
-                            break;
-
-                    }
-                    console.log("TYPE:", type);
-                    if (type <= 2){
-//                        piece.simpleSlope(type);
-                    } else if (type <= 4){
-                    } else if (type <= 6){
-//                        piece.concaveSlope1(1);
-                    } else {
-//                        piece.concaveSlope2(1);
-                    }
-                    color = 'white';
-                break;
-            case 'arrow':
-                color = 'green';
-                break;
-            case 'trampoline':
-                color = 'yellow';
-                break;
-            case 'water':
-                color = 'blue';
-//                piece.addZ(-1);
-                break;
-        }
-        var darkMaterial = new THREE.MeshBasicMaterial( { color: color } );
-       	var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } );
-       	var multiMaterial = [ darkMaterial, wireframeMaterial ];
-        var boxMesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
-        boxMesh.translateX(p.x - 3.5);
-        boxMesh.translateY(3.5 - p.y);
-        boxMesh.translateZ(p.z / 2);
-        boxMesh.rotateZ(-(r % 4) * Math.PI / 2);
-        scene.add(boxMesh);
-*/
     }
 
     var i = 66, j = 72, player, texture;
     var assetLoader = new AssetLoader(function(assets) {
-        "use strict";
+        'use strict';
         player = new Player(assets['brushes'].asset, assets['screens'].asset);
         texture = assets['spindizzy_texture'].asset;
         init();
@@ -390,7 +348,7 @@
     }
 
     var animate = function (){
-        "use strict";
+        'use strict';
         orbitControls.update();
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
