@@ -54,10 +54,10 @@
             height: [0, 0, 0, 0],
         },
         basic: {
-            height: [1, 1, 1, 1],
+            height: [1, 1, 1, 1]
         },
         gentleSlope: {
-            height: [1, 1, 2, 2],
+            height: [1, 1, 2, 2]
         },
         normalSlope: {
             height: [1, 1, 3, 3]
@@ -72,7 +72,8 @@
             height: [1, 1, 1, 2]
         },
         break3: {
-            height: [2, 2, 1, 2]
+            height: [2, 1, 2, 2],
+            reverse: true
         },
         unidentified: {
             height: [0, 0, 0, 0]
@@ -145,7 +146,8 @@
         }
         switch(nature){
             case 'empty':
-                column[h] = {contour: Board.contours.none, top: Board.tops.one}
+                column[h] = {contour: Board.contours.none, top: Board.tops.one};
+                break;
             case 'block':
                 column[h] = {contour: Board.contours.basic, top: Board.tops.plain};
                 break;
@@ -214,10 +216,17 @@
                         // top
 
                         if (block.top){
-                            boardGeometry.faces.push(new THREE.Face3(c[0], c[1], c[3]));
-                            boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, false));
-                            boardGeometry.faces.push(new THREE.Face3(c[1], c[2], c[3]));
-                            boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, true));
+                            if (block.contour.reverse){
+                                boardGeometry.faces.push(new THREE.Face3(c[1], c[2], c[0]));
+                                boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, false));
+                                boardGeometry.faces.push(new THREE.Face3(c[2], c[3], c[0]));
+                                boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, true));
+                            } else {
+                                boardGeometry.faces.push(new THREE.Face3(c[0], c[1], c[3]));
+                                boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, false));
+                                boardGeometry.faces.push(new THREE.Face3(c[1], c[2], c[3]));
+                                boardGeometry.faceVertexUvs[0].push(textureUV(block.top.texture, true));
+                            }
                         }
 
                     }

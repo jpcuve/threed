@@ -67,7 +67,7 @@
     var texture = new THREE.TextureLoader().load('assets/textures/UV_Grid_Sm.jpg', function () {
         animate();
     });
-    var material = new THREE.MeshPhongMaterial({ color: 0x888800 });
+    var material = new THREE.MeshPhongMaterial({ color: 0x888800, wireframe: true });
     var ground = new THREE.Mesh(geometry, material);
     ground.receiveShadow = true;
     scene.add(ground);
@@ -91,7 +91,7 @@
     var cubeGeometry = new THREE.CubeGeometry(1, 1, 1);
     var cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
     cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    // make the cube cast and recieve shadow
+    // make the cube cast and receive shadow
     cube.castShadow = true;
     cube.receiveShadow = true;
     cube.position.set(3, 3, 5);
