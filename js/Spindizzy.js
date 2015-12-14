@@ -25,7 +25,7 @@ function Player(brushData, screenData){
     this.brushes = {};
     this.screens = {};
     this.debug = false;
-    this.layouts = ['basic', 'extruded', 'basic', 'column', 'special'];
+    this.layouts = ['basic', 'extruded', 'basic', 'column'];
     this.floor = new Uint8Array(65 * 2).fill(0);
     var brushCount = 0, screenCount = 0, offset, l, i, j;
     offset = 0;
@@ -57,7 +57,7 @@ function Player(brushData, screenData){
 }
 
 Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
-    "use strict";
+    'use strict';
     var l, p, r, nature, type;
     while ((l = buffer[offset] + (buffer[offset + 1] << 8)) != 0){
         p = new THREE.Vector3(l >> 10 & 7, l >> 13 & 7, l >> 7 & 7);
@@ -79,7 +79,6 @@ Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
             offset++;
         } else {
             r = 0;
-            nature = 'undefined';
             type = 0;
             switch(f){
                 case 1:
@@ -108,9 +107,6 @@ Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
                     } else {
                         nature = 'slope';
                         type = t;
-                        if (t < 1){
-                            console.log('invalid slope type, f=', f);
-                        }
                         r = f & 3;
                     }
                     break;
@@ -128,7 +124,7 @@ Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
 };
 
 Player.prototype.special = function(paint, po, ro, buffer, offset){
-    "use strict";
+    'use strict';
     var l, p, nature;
     while (buffer[offset] != 0){
         l = buffer[offset] + (buffer[offset + 1] << 8) + (buffer[offset + 2] << 16);
@@ -143,14 +139,14 @@ Player.prototype.special = function(paint, po, ro, buffer, offset){
         } else if ((l & 4) === 4){
             nature = 'puzzle';
         }
-        paint(this.layouts[4], new THREE.Vector3().addVectors(po, p), ro, nature, l);
+        paint('special', new THREE.Vector3().addVectors(po, p), ro, nature, l);
         offset += 3;
     }
     return offset;
 };
 
 Player.prototype.screen = function(paint, p, ro){
-    "use strict";
+    'use strict';
     var screen = this.screens[(p.y << 8) + p.x], offset, xo, yo, x, y;
     if (screen) {
         if (this.debug){
@@ -181,7 +177,7 @@ Player.prototype.screen = function(paint, p, ro){
 };
 
 Player.prototype.dump = function(){
-    "use strict";
+    'use strict';
     var x, y, ar;
     for (y = 40; y < 80; y++){
         if (y % 10 == 0){
