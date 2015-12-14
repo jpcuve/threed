@@ -108,7 +108,7 @@
 
     Board.prototype.play = function(layout, p, r, nature, type){
         'use strict';
-        var column = this.columns[p.x][7 - p.y];
+        var column = this.columns[p.x][7 - p.y], h;
         switch(layout){
             case 'basic':
                 h = p.z;
@@ -144,36 +144,32 @@
             case 'arrow':
                 column[h] = { contour: Board.contours.basic, top: Board.texture.arrow, rotation: r % 4};
                 break;
-            case 'slope':
-                    switch(type){
-                        case 0:
-                            column[h] = null;
-                            break;
-                        case 1:
-                            column[h] = { contour: Board.contours.gentleSlope, top: Board.texture.plain, rotation: r % 4};
-                            break;
-                        case 2:
-                            column[h] = { contour: Board.contours.normalSlope, top: Board.texture.plain, rotation: r % 4};
-                            break;
-                        case 3:
-                            column[h] = { contour: Board.contours.break3, top: Board.texture.cross1, rotation: r % 4};
-                            break;
-                        case 4:
-                            column[h] = { contour: Board.contours.break4, top: Board.texture.cross1, rotation: r % 4};
-                            break;
-                        case 5:
-                            column[h] = { contour: Board.contours.break5, top: Board.texture.cross1, rotation: r % 4};
-                            break;
-                        case 6:
-                            column[h] = { contour: Board.contours.break1, top: Board.texture.cross1, rotation: r % 4};
-                            break;
-                        case 7:
-                            column[h] = { contour: Board.contours.break2, top: Board.texture.cross1, rotation: r % 4};
-                            break;
-                        default:
-                            column[h] = {top: Board.texture.one};
-                            break;
-                    }
+            case 'custom0':
+                column[h] = null;
+                break;
+            case 'custom1':
+                column[h] = { contour: Board.contours.gentleSlope, top: Board.texture.plain, rotation: r % 4};
+                break;
+            case 'custom2':
+                column[h] = { contour: Board.contours.normalSlope, top: Board.texture.plain, rotation: r % 4};
+                break;
+            case 'custom3':
+                column[h] = { contour: Board.contours.break3, top: Board.texture.cross1, rotation: r % 4};
+                break;
+            case 'custom4':
+                column[h] = { contour: Board.contours.break4, top: Board.texture.cross1, rotation: r % 4};
+                break;
+            case 'custom5':
+                column[h] = { contour: Board.contours.break5, top: Board.texture.cross1, rotation: r % 4};
+                break;
+            case 'custom6':
+                column[h] = { contour: Board.contours.break1, top: Board.texture.cross1, rotation: r % 4};
+                break;
+            case 'custom7':
+                column[h] = { contour: Board.contours.break2, top: Board.texture.cross1, rotation: r % 4};
+                break;
+            default:
+                column[h] = {top: Board.texture.one};
                 break;
         }
     };

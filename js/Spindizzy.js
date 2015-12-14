@@ -105,8 +105,8 @@ Player.prototype.terrain = function(paint, po, ro, buffer, offset, level){
                         nature = 'arrow';
                         r = f & 3;
                     } else {
-                        nature = 'slope';
                         type = t;
+                        nature = 'custom' + t;
                         r = f & 3;
                     }
                     break;
