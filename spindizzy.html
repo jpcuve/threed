@@ -45,43 +45,6 @@
         this.init();
     }
 
-    Board.contours = {
-        basic: {
-            basement: true
-        },
-        gentleSlope: {
-            ceiling: [0, 0, 1, 1],
-            basement: true
-        },
-        normalSlope: {
-            ceiling: [0, 0, 2, 2],
-            basement: true
-        },
-        break4: {
-            ceiling: [0, 0, 0, 1],
-            basement: true,
-            reverse: true
-        },
-        break1: {
-            ceiling: [1, 0, 1, 1],
-            basement: true
-        },
-        break2: {
-            ceiling: [0, 0, 0, 1],
-            basement: true
-        },
-        break3: {
-            ceiling: [0, 0, 1, 1],
-            basement: true,
-            reverse: true
-        },
-        break5: {
-            ceiling: [1, 0, 1, 1],
-            basement: true,
-            reverse: true
-        }
-    };
-
     Board.texture = {
         one: 0,
         trampoline: 1,
@@ -109,73 +72,75 @@
     Board.prototype.play = function(layout, p, r, nature, type){
         'use strict';
         var column = this.columns[p.x][7 - p.y], h;
-        switch(layout){
-            case 'basic':
-                h = p.z;
-                break;
-            case 'column':
-                for (h = 0; h < p.z; h++){
-                    column[h] = {contour: Board.contours.basic};
-                }
-                break;
-            case 'extrude':
-                    // do not know what to do
-                break;
-            case 'special':
-                    // later
-                break;
-        }
         switch(nature){
-            case 'empty':
-                column[h] = { top: Board.texture.one};
-                break;
             case 'block':
-                column[h] = { contour: Board.contours.basic, top: Board.texture.plain};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { top: Board.texture.plain};
                 break;
             case 'trampoline':
-                column[h] = { contour: Board.contours.basic, top: Board.texture.trampoline};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { top: Board.texture.trampoline};
                 break;
             case 'water':
-                column[h] = { top: Board.texture.water};
+                column[p.z] = {};
+                column[p.z + 1] = { top: Board.texture.water};
                 break;
             case 'ice':
-                column[h] = { contour: Board.contours.basic, top: Board.texture.ice};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { top: Board.texture.ice};
                 break;
             case 'arrow':
-                column[h] = { contour: Board.contours.basic, top: Board.texture.arrow, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { top: Board.texture.arrow, rotation: r % 4};
                 break;
             case 'custom0':
-                column[h] = null;
+                column[p.z] = {};
+                column[p.z + 1] = {};
                 break;
             case 'custom1':
-                column[h] = { contour: Board.contours.gentleSlope, top: Board.texture.plain, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [0, 0, 1, 1], top: Board.texture.plain, rotation: r % 4};
                 break;
             case 'custom2':
-                column[h] = { contour: Board.contours.normalSlope, top: Board.texture.plain, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [0, 0, 2, 2], top: Board.texture.plain, rotation: r % 4};
                 break;
             case 'custom3':
-                column[h] = { contour: Board.contours.break3, top: Board.texture.cross1, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [0, 0, 1, 1], top: Board.texture.cross1, reverse: true, rotation: r % 4};
                 break;
             case 'custom4':
-                column[h] = { contour: Board.contours.break4, top: Board.texture.cross1, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [0, 0, 0, 1], top: Board.texture.cross1, reverse: true, rotation: r % 4};
                 break;
             case 'custom5':
-                column[h] = { contour: Board.contours.break5, top: Board.texture.cross1, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [1, 0, 1, 1], top: Board.texture.cross1, reverse: true, rotation: r % 4};
                 break;
             case 'custom6':
-                column[h] = { contour: Board.contours.break1, top: Board.texture.cross1, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [1, 0, 1, 1], top: Board.texture.cross1, rotation: r % 4};
                 break;
             case 'custom7':
-                column[h] = { contour: Board.contours.break2, top: Board.texture.cross1, rotation: r % 4};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { ceiling: [0, 0, 0, 1], top: Board.texture.cross1, rotation: r % 4};
                 break;
             default:
-                column[h] = {top: Board.texture.one};
+                column[p.z] = { ceiling: [1, 1, 1, 1]};
+                column[p.z + 1] = { top: Board.texture.one };
+                break;
+        }
+        switch(layout){
+            case 'column':
+                for (h = 0; h < p.z; h++){
+                    column[h] = column[p.z];
+                }
                 break;
         }
     };
 
     Board.prototype.compute = function(){
-        var x, y, z, block, f, c, h, b, r, i, boardGeometry = new THREE.Geometry(),  mx = 8, my = 8, mz = 10, vertexAt = function(x, y, z){
+        var x, y, z, block, f, c, h, r, i, boardGeometry = new THREE.Geometry(),  mx = 8, my = 8, mz = 10, vertexAt = function(x, y, z){
             return x * (my + 1) * (mz + 1) + y * (mz + 1) + z;
         };
         for (x = 0; x <= mx; x++){
@@ -191,83 +156,38 @@
                     block = this.columns[x][y][z];
                     if (block){
                         console.log('block: (', x, ',', y, ',', z, ') ', JSON.stringify(block));
-                        h = block.contour && block.contour.ceiling ? block.contour.ceiling.slice() : [0, 0, 0, 0];
                         r = block.rotation || 0;
-                        b = [vertexAt(x, y, z), vertexAt(x + 1, y, z), vertexAt(x + 1, y + 1, z), vertexAt(x, y + 1, z)];
-                        f = [vertexAt(x, y, z + 1), vertexAt(x + 1, y, z + 1), vertexAt(x + 1, y + 1, z + 1), vertexAt(x, y + 1, z + 1)];
-                        c = [vertexAt(x, y, z + 1 + h[(r + 0) % 4]), vertexAt(x + 1, y, z + 1 + h[(r + 1) % 4]), vertexAt(x + 1, y + 1, z + 1 + h[(r + 2) % 4]), vertexAt(x, y + 1, z + 1 + h[(r + 3) % 4])];
+                        h = block.ceiling || [0, 0, 0, 0];
+                        f = [vertexAt(x, y, z), vertexAt(x + 1, y, z), vertexAt(x + 1, y + 1, z), vertexAt(x, y + 1, z)];
+                        c = [vertexAt(x, y, z + h[(r + 0) % 4]), vertexAt(x + 1, y, z + h[(r + 1) % 4]), vertexAt(x + 1, y + 1, z + h[(r + 2) % 4]), vertexAt(x, y + 1, z + h[(r + 3) % 4])];
                         // apply block rotation
                         for (i = 0; i < r; i++){
-                            b.unshift(b.pop());
                             f.unshift(f.pop());
                             c.unshift(c.pop());
                         }
-                        // faces
-                        if (block.contour){
-                            if (block.contour.basement){
-                                // face y = 0
-                                boardGeometry.faces.push(new THREE.Face3(b[0], b[1], f[0]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                boardGeometry.faces.push(new THREE.Face3(b[1], f[1], f[0]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                // face x = 0
-                                boardGeometry.faces.push(new THREE.Face3(b[3], b[0], f[3]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                boardGeometry.faces.push(new THREE.Face3(b[0], f[0], f[3]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                // face y = 1
-                                boardGeometry.faces.push(new THREE.Face3(b[2], b[3], f[2]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                boardGeometry.faces.push(new THREE.Face3(b[3], f[3], f[2]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                // face x = 1
-                                boardGeometry.faces.push(new THREE.Face3(b[1], b[2], f[1]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                boardGeometry.faces.push(new THREE.Face3(b[2], f[2], f[1]));
-                                boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                            }
-                            if (block.contour.ceiling){
-                                // face y = 0
-                                if (c[0] > f[0]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                }
-                                if (c[1] > f[1]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[1], c[1], c[0]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                }
-                                // face x = 0
-                                if (c[3] > f[3]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[3], f[0], c[3]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                }
-                                if (c[0] > f[0]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[0], c[0], c[3]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                }
-                                // face y = 1
-                                if (c[2] > f[2]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[2], f[3], c[2]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                }
-                                if (c[3] > f[3]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[3], c[3], c[2]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                }
-                                // face x = 1
-                                if (c[1] > f[1]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[1], f[2], c[1]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
-                                }
-                                if (c[2] > f[2]){
-                                    boardGeometry.faces.push(new THREE.Face3(f[2], c[2], c[1]));
-                                    boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
-                                }
-                            }
-                        }
+                        // face y = 0
+                            boardGeometry.faces.push(new THREE.Face3(f[0], f[1], c[0]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
+                            boardGeometry.faces.push(new THREE.Face3(f[1], c[1], c[0]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
+                        // face x = 0
+                            boardGeometry.faces.push(new THREE.Face3(f[3], f[0], c[3]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
+                            boardGeometry.faces.push(new THREE.Face3(f[0], c[0], c[3]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
+                        // face y = 1
+                            boardGeometry.faces.push(new THREE.Face3(f[2], f[3], c[2]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
+                            boardGeometry.faces.push(new THREE.Face3(f[3], c[3], c[2]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
+                        // face x = 1
+                            boardGeometry.faces.push(new THREE.Face3(f[1], f[2], c[1]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, false));
+                            boardGeometry.faces.push(new THREE.Face3(f[2], c[2], c[1]));
+                            boardGeometry.faceVertexUvs[0].push(textureUV(Board.texture.dotted, true));
                         // top
                         if (block.top){
-                            if (block.contour && block.contour.reverse){
+                            if (block.reverse){
                                 boardGeometry.faces.push(new THREE.Face3(c[1], c[2], c[0]));
                                 boardGeometry.faceVertexUvs[0].push(textureUV(block.top, false));
                                 boardGeometry.faces.push(new THREE.Face3(c[2], c[3], c[0]));
