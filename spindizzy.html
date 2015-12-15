@@ -54,7 +54,8 @@
         cross2: 5,
         water: 11,
         arrow: 17,
-        ice: 19
+        ice: 19,
+        special: 20
     };
 
     Board.prototype.init = function(){
@@ -127,7 +128,7 @@
                 break;
             default:
                 column[p.z] = { ceiling: [1, 1, 1, 1]};
-                column[p.z + 1] = { top: Board.texture.one };
+                column[p.z + 1] = { top: Board.texture.special };
                 break;
         }
         switch(layout){
@@ -219,7 +220,7 @@
 
 //    var i = 60, j = 44, player, texture;
 //    var i = 84, j = 44, player, texture;
-    var i = 59, j = 65, player, texture;
+    var i = 64, j = 64, player, texture;
     var assetLoader = new AssetLoader(function(assets) {
         'use strict';
         player = new Player(assets['brushes'].asset, assets['screens'].asset);
